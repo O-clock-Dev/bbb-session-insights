@@ -1,7 +1,7 @@
 import { AuthOptions } from "next-auth";
 import { decode } from "next-auth/jwt";
 import NextAuth from "next-auth/next";
-import KeycloakProvider from "next-auth/providers/keycloak"
+import KeycloakProvider from "next-auth/providers/keycloak";
 
 function requestRefreshOfAccessToken(token) {
   return fetch(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
@@ -13,10 +13,9 @@ function requestRefreshOfAccessToken(token) {
       refresh_token: token.refreshToken,
     }),
     method: "POST",
-    cache: "no-store"
+    cache: "no-store",
   });
 }
-
 
 export const authOptions = {
   providers: [
@@ -29,57 +28,55 @@ export const authOptions = {
           id: profile.sub,
           vpnName: profile.discord,
           email: profile.email,
-          name: profile.name ?? profile.preferred_username
-        }
-      }
-      
-    })
+          name: profile.name ?? profile.preferred_username,
+        };
+      },
+    }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 60 * 30
+    maxAge: 60 * 30,
   },
   callbacks: {
     async jwt({ token, account, user, profile }) {
       if (account) {
-        const test = decode(token)
+        const test = decode(token);
         // console.log(user)
-        token.idToken = account.id_token
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
-        token.expiresAt = account.expires_at
+        token.idToken = account.id_token;
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.expiresAt = account.expires_at;
 
-        return token
+        return token;
       }
 
-      if (Date.now() < (token.expiresAt * 1000 - 60 * 1000)) {
-        return token
+      if (Date.now() < token.expiresAt * 1000 - 60 * 1000) {
+        return token;
       } else {
         try {
-          const response = await requestRefreshOfAccessToken(token)
+          const response = await requestRefreshOfAccessToken(token);
 
-          const tokens = await response.json()
+          const tokens = await response.json();
 
-          if (!response.ok) throw tokens
+          if (!response.ok) throw tokens;
 
           const updatedToken = {
             ...token, // Keep the previous token properties
             idToken: tokens.id_token,
             accessToken: tokens.access_token,
-            expiresAt: Math.floor(Date.now() / 1000 + (tokens.expires_in)),
+            expiresAt: Math.floor(Date.now() / 1000 + tokens.expires_in),
             refreshToken: tokens.refresh_token ?? token.refreshToken,
-          }
-          return updatedToken
+          };
+          return updatedToken;
         } catch (error) {
-          console.error("Error refreshing access token", error)
-          return { ...token, error: "RefreshAccessTokenError" }
+          console.error("Error refreshing access token", error);
+          return { ...token, error: "RefreshAccessTokenError" };
         }
       }
     },
-  }
-}
-
+  },
+};
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };
