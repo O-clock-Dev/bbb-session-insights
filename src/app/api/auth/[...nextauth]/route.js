@@ -3,6 +3,7 @@ import { decode } from "next-auth/jwt";
 import NextAuth from "next-auth/next";
 import KeycloakProvider from "next-auth/providers/keycloak";
 
+
 function requestRefreshOfAccessToken(token) {
   return fetch(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
