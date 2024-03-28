@@ -40,7 +40,7 @@ export async function parseCourses() {
         const courseId = courseData.intId;
         const meetingId = file.split("/")[0];
         const reportId = file.split("/")[1].split(".")[0];
-        const url = `https://bbb1.oclock.school/learning-analytics-dashboard/?meeting=${meetingId}&report=${reportId}&lang=fr`;
+        const url = `${process.env.LEARNING_DASHBOARD_BASEURL}/learning-analytics-dashboard/?meeting=${meetingId}&report=${reportId}&lang=fr`;
 
         courses.push({
           name: courseName,
