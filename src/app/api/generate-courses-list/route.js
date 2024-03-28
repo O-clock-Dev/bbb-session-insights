@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from 'node:fs'
 import { authOptions } from "../auth/[...nextauth]/route";
-import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 
 function convertUnixTimeStamp(timestamp) {
   const options = {
@@ -59,7 +59,8 @@ export async function parseCourses() {
 
 
 export async function GET(req, res) {
-  //const session = await getServerSession(authOptions)
+  const token = await getToken({req})
+  if (token) {
     try {
       const result = await parseCourses()
       return NextResponse.json(result);
@@ -73,6 +74,15 @@ export async function GET(req, res) {
           status: 500,
         };
         return NextResponse.json(response, responseHeaders);
-      }
+      }    
+  } else {
+    const response = {
+      error: 'Unauthorized'
+    }
+    const responseHeaders = {
+      status: 401
+    }
+    return NextResponse.json(response, responseHeaders);
+  }
+
   }  
-  

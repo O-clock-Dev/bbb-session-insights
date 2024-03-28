@@ -10,7 +10,7 @@ export default async function Home() {
       
       <div className='items-center justify-center border-1 flex flex-col'>
       <img className="mb-8 rounded-full w-48 h-48" src="https://oclock.io/wp-content/uploads/2023/11/logo-noir-blanc-rouge-768x768_centre-rond720px.png" alt="Logo O'clock"></img>
-      <div>Liste des dashboard d'activités apprenant sur { process.env.LEARNING_DASHBOARD_BASEURL } </div>
+      <div>Liste des dashboard d&apos;activités apprenant sur { process.env.LEARNING_DASHBOARD_BASEURL } </div>
       <CourseList></CourseList>
       </div>
       </div>
