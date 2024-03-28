@@ -6,6 +6,7 @@ const nextConfig = {
 
 module.exports = {
   output: "standalone",
+  basePath: "/dashboards",
   webpack: (config, { dev, isServer, webpack, nextRuntime }) => {
     config.module.rules.push({
       test: /\.node$/,
