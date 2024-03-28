@@ -17,6 +17,7 @@ function requestRefreshOfAccessToken(token) {
   });
 }
 
+
 export const authOptions = {
   providers: [
     KeycloakProvider({
