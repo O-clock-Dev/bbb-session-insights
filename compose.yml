@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  dashboards:
+    container_name: dashboards
+    env_file: .env
+    build:
+      context: .
+    ports:
+      - 127.0.0.1:6666:3000
+    logging:
+      driver: journald
+    volumes:
+      - /var/bigbluebutton/learning-dashboard/:/data
