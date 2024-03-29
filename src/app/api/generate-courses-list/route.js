@@ -7,10 +7,10 @@ import { getToken } from "next-auth/jwt";
 async function generateReplayUrl(meetingId) {
   try {
     const folderPath = `${process.env.REPLAYS_FOLDER}/${meetingId}`;
-    console.log("Checking folder:", folderPath);
+    //console.log("Checking folder:", folderPath);
     await access(folderPath);
     const replayUrl = `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
-    console.log("Replay URL:", replayUrl);
+    //console.log("Replay URL:", replayUrl);
     return replayUrl;
   } catch(error) {
     return null;
