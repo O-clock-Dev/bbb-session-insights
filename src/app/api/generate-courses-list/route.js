@@ -12,7 +12,7 @@ async function generateReplayUrl(meetingId) {
     const replayUrl = `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
     //console.log("Replay URL:", replayUrl);
     return replayUrl;
-  } catch(error) {
+  } catch (error) {
     return null;
   }
 }
@@ -20,7 +20,9 @@ async function generateReplayUrl(meetingId) {
 export async function parseCourses() {
   const folderName = process.env.LEARNING_DASHBOARD_FOLDER;
   if (!folderName) {
-    throw new Error("LEARNING_DASHBOARD_FOLDER is not defined in the environment variables");
+    throw new Error(
+      "LEARNING_DASHBOARD_FOLDER is not defined in the environment variables",
+    );
   }
 
   try {
@@ -60,7 +62,6 @@ export async function parseCourses() {
     throw error;
   }
 }
-
 
 export async function GET(req, res) {
   const token = await getToken({ req });
