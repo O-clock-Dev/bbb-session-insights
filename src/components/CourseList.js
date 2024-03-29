@@ -29,12 +29,14 @@ export default function CourseList() {
     );
   return (
     <div className="mt-3 relative overflow-x-auto shadow-md sm:rounded-lg">
-      <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+      <table className="w-full border-collapse text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" className="px-6 py-3">
-              Session
+              Nom de la session
             </th>
+            <th scope="col" className="px-6 py-3"></th>
+            <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3">
               Date de création
             </th>
@@ -53,13 +55,33 @@ export default function CourseList() {
                 scope="row"
                 className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
               >
-                <a
-                  className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-                  href={course.url}
-                >
-                  {course.name}
-                </a>
+                {course.name}
               </th>
+              <td><a
+                  className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                  href={course.dashboardUrl}
+                >
+                  Dashboard
+                </a>
+                </td>
+                <td>
+  {course.replayUrl ? (
+    <a
+      className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
+      href={course.replayUrl}
+    >
+      Replay
+    </a>
+  ) : (
+    <button
+      className="text-gray-500 bg-gray-300 cursor-not-allowed focus:ring-4 focus:ring-gray-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-400 focus:outline-none dark:focus:ring-gray-800"
+      disabled
+    >
+      Replay
+    </button>
+  )}
+</td>
+
               <td className="px-6 py-4">{convertUnixTimeStamp(course.creationDate)}</td>
               <td className="px-6 py-4">{convertUnixTimeStamp(course.endDate)}</td>
             </tr>
