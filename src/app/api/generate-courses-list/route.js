@@ -3,20 +3,6 @@ import fs from "node:fs";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { getToken } from "next-auth/jwt";
 
-function convertUnixTimeStamp(timestamp) {
-  const options = {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-  };
-  // let date = new Date(timestamp * 1000)
-  const date = new Intl.DateTimeFormat("fr-FR", options).format(timestamp);
-  return date;
-}
-
 export async function parseCourses() {
   const folderName = process.env.LEARNING_DASHBOARD_FOLDER;
   if (!folderName) {
@@ -35,8 +21,9 @@ export async function parseCourses() {
         const jsonData = fs.readFileSync(filePath);
         const courseData = JSON.parse(jsonData);
         const courseName = courseData.name;
-        const courseCreationDate = convertUnixTimeStamp(courseData.createdOn);
-        const courseEndDate = convertUnixTimeStamp(courseData.endedOn);
+        // const courseCreationDate = convertUnixTimeStamp(courseData.createdOn);
+        const courseCreationDate = courseData.createdOn;
+        const courseEndDate = courseData.endedOn;
         const courseId = courseData.intId;
         const meetingId = file.split("/")[0];
         const reportId = file.split("/")[1].split(".")[0];

@@ -1,17 +1,23 @@
 "use client";
 import useSWR from "swr";
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
+import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
 
 export default function CourseList() {
   const { data, error } = useSWR("dashboards/api/generate-courses-list", fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
     revalidateIfStale: false,
   });
 
+  const sortData = (data) => {
+    return data ? [...data].sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate)) : [];
+  };
+
+  const sortedData = sortData(data);
+
   if (error) return <div>Failed to load</div>;
-  if (data) console.log(data);
-  if (!data)
+  if (!sortedData)
     return (
       <div
         className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500"
@@ -38,7 +44,7 @@ export default function CourseList() {
           </tr>
         </thead>
         <tbody>
-          {data.map((course) => (
+          {sortedData.map((course) => (
             <tr
               key={course.id}
               className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
@@ -54,8 +60,8 @@ export default function CourseList() {
                   {course.name}
                 </a>
               </th>
-              <td className="px-6 py-4">{course.creationDate}</td>
-              <td className="px-6 py-4">{course.endDate}</td>
+              <td className="px-6 py-4">{convertUnixTimeStamp(course.creationDate)}</td>
+              <td className="px-6 py-4">{convertUnixTimeStamp(course.endDate)}</td>
             </tr>
           ))}
         </tbody>
