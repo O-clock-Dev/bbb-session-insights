@@ -13,3 +13,4 @@ services:
     volumes:
       - /var/bigbluebutton/learning-dashboard/:/data
       - /var/bigbluebutton/published/presentation:/replays
+      

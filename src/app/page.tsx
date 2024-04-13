@@ -3,13 +3,15 @@ import { authOptions } from "./api/auth/[...nextauth]/route";
 import Login from "../components/Login";
 import CourseList from "../components/CourseList";
 
-function isAuthorized(email) {
-  return email.endsWith('@oclock.io');
+function isAuthorized(email: string | null | undefined) {
+  if (!email) return false;
+  return email.endsWith("@oclock.io");
 }
 
 export default async function Home() {
+  // @ts-ignore
   const session = await getServerSession(authOptions);
-  if (session && isAuthorized(session.user.email)) {
+  if (session && session.user && isAuthorized(session.user.email)) {
     return (
       <div className="flex flex-col justify-center items-center text-2xl">
         <div className="items-center justify-center border-1 flex flex-col">
