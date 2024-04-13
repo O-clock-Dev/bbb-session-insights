@@ -1,13 +1,9 @@
 /** @type {import('next').NextConfig} */
-const os = require("node:os");
+const os = import("node:os");
 const nextConfig = {
     output: "standalone",
-};
-
-module.exports = {
-    output: "standalone",
     basePath: "/dashboards",
-    webpack: (config, { dev, isServer, webpack, nextRuntime }) => {
+    /*webpack: (config, { dev, isServer, webpack, nextRuntime }) => {
         config.module.rules.push({
             test: /\.node$/,
             use: [
@@ -22,7 +18,7 @@ module.exports = {
         });
 
         return config;
-    },
+    },*/
 };
 
 export default nextConfig;
