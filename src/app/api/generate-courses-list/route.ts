@@ -1,17 +1,13 @@
-import { NextResponse } from "next/server";
-import fs, { stat } from "node:fs";
+import { NextRequest, NextResponse } from "next/server";
+import fs from "node:fs";
 import { access } from "node:fs/promises";
-import { authOptions } from "../auth/[...nextauth]/route";
 import { getToken } from "next-auth/jwt";
 
-async function generateReplayUrl(meetingId) {
+async function generateReplayUrl(meetingId: string) {
   try {
     const folderPath = `${process.env.REPLAYS_FOLDER}/${meetingId}`;
-    //console.log("Checking folder:", folderPath);
     await access(folderPath);
-    const replayUrl = `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
-    //console.log("Replay URL:", replayUrl);
-    return replayUrl;
+    return `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
   } catch (error) {
     return null;
   }
@@ -26,13 +22,14 @@ export async function parseCourses() {
   }
 
   try {
-    const files = fs.readdirSync(folderName, { recursive: true });
+    const files = fs.readdirSync(folderName, { recursive: true }) as string[];
     const courses = [];
 
     for (const file of files) {
       if (file.endsWith("learning_dashboard_data.json")) {
         const filePath = `${folderName}/${file}`;
         const jsonData = fs.readFileSync(filePath);
+        // @ts-ignore
         const courseData = JSON.parse(jsonData);
         const courseName = courseData.name;
         const courseCreationDate = courseData.createdOn;
@@ -63,7 +60,7 @@ export async function parseCourses() {
   }
 }
 
-export async function GET(req, res) {
+export async function GET(req: NextRequest) {
   const token = await getToken({ req });
   if (token) {
     try {
@@ -72,6 +69,7 @@ export async function GET(req, res) {
     } catch (error) {
       console.error(error);
       const response = {
+        // @ts-ignore
         error: error.message,
       };
       const responseHeaders = {

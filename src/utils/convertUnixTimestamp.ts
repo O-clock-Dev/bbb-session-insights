@@ -1,5 +1,5 @@
-function convertUnixTimeStamp(timestamp) {
-  const options = {
+function convertUnixTimeStamp(timestamp: number) {
+  const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -8,8 +8,7 @@ function convertUnixTimeStamp(timestamp) {
     minute: "numeric",
   };
   // let date = new Date(timestamp * 1000)
-  const date = new Intl.DateTimeFormat("fr-FR", options).format(timestamp);
-  return date;
+  return new Intl.DateTimeFormat("fr-FR", options).format(timestamp);
 }
 
 export default convertUnixTimeStamp;

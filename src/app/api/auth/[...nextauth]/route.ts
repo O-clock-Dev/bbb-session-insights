@@ -1,14 +1,13 @@
-import { AuthOptions } from "next-auth";
 import { decode } from "next-auth/jwt";
 import NextAuth from "next-auth/next";
 import KeycloakProvider from "next-auth/providers/keycloak";
 
-function requestRefreshOfAccessToken(token) {
+function requestRefreshOfAccessToken(token: any) {
   return fetch(`${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.KEYCLOAK_CLIENT_ID,
-      client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+      client_id: process.env.KEYCLOAK_CLIENT_ID!,
+      client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
       grant_type: "refresh_token",
       refresh_token: token.refreshToken,
     }),
@@ -20,8 +19,8 @@ function requestRefreshOfAccessToken(token) {
 export const authOptions = {
   providers: [
     KeycloakProvider({
-      clientId: process.env.KEYCLOAK_CLIENT_ID,
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+      clientId: process.env.KEYCLOAK_CLIENT_ID!,
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer: process.env.KEYCLOAK_ISSUER,
       profile(profile) {
         return {
@@ -38,7 +37,7 @@ export const authOptions = {
     maxAge: 60 * 30,
   },
   callbacks: {
-    async jwt({ token, account, user, profile }) {
+    async jwt({ token, account, user, profile }: any): Promise<any> {
       if (account) {
         const test = decode(token);
         // console.log(user)
@@ -60,14 +59,13 @@ export const authOptions = {
 
           if (!response.ok) throw tokens;
 
-          const updatedToken = {
+          return {
             ...token, // Keep the previous token properties
             idToken: tokens.id_token,
             accessToken: tokens.access_token,
             expiresAt: Math.floor(Date.now() / 1000 + tokens.expires_in),
             refreshToken: tokens.refresh_token ?? token.refreshToken,
           };
-          return updatedToken;
         } catch (error) {
           console.error("Error refreshing access token", error);
           return { ...token, error: "RefreshAccessTokenError" };
@@ -77,6 +75,7 @@ export const authOptions = {
   },
 };
 
+// @ts-ignore
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
