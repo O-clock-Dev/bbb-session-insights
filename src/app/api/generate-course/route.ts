@@ -88,7 +88,7 @@ export async function parseCourse(meetingId: string, reportId: string) {
                     // increment totalOfMessages
                     participant.totalOfMessages += user.totalOfMessages;
                 } else {
-                    const courseUser: CourseParticipant = {
+                    const courseParticipant: CourseParticipant = {
                         name: user.name,
                         slug: slugify(user.name, {lower: true}),
                         userKey: user.userKey,
@@ -96,7 +96,7 @@ export async function parseCourse(meetingId: string, reportId: string) {
                         leftOn: intIdData.leftOn,
                         totalOfMessages: user.totalOfMessages,
                     }
-                    courseParticipants.push(courseUser);
+                    courseParticipants.push(courseParticipant);
                 }
             }
         }
