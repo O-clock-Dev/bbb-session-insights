@@ -8,7 +8,7 @@ async function generateReplayUrl(meetingId: string) {
   try {
     const folderPath = `${process.env.REPLAYS_FOLDER}${path.sep}${meetingId}`;
     await access(folderPath);
-    return `${process.env.LEARNING_DASHBOARD_BASEURL}${path.sep}playback${path.sep}presentation${path.sep}2.3${path.sep}${meetingId}`;
+    return `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
   } catch (error) {
     return null;
   }
