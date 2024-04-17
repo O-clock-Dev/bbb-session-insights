@@ -3,6 +3,7 @@ import path from 'path';
 import { XMLParser } from 'fast-xml-parser';
 import slugify from 'slugify';
 import { NextResponse, NextRequest } from 'next/server';
+import { getToken } from "next-auth/jwt";
 import process from 'process';
 
 interface messageData {
@@ -58,23 +59,35 @@ async function generateMessages(dataJson: any) {
 }
 
 export async function GET(
-    request: NextRequest,
+    req: NextRequest,
 ) {
-    const folderName = `${process.env.PRESENTATION_FOLDER}`;
-    const meetingId = request.nextUrl.searchParams.get('meetingId');
-    if (!folderName) {
-        throw new Error(
-            "LEARNING_DASHBOARD_FOLDER is not defined in the environment variables",
-        );
-    }
-    if (!meetingId) {
-        throw new Error("parameter meetingId is required in the query string");
-    }
-    const fileName = `${folderName}${path.sep}${meetingId}${path.sep}slides_new.xml`
-    const dataXml = await fs.readFile(fileName, 'utf-8');
-    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix : ""});
-    const dataJson = await parser.parse(dataXml);
-    const participants = await generateMessages(dataJson);
+    const token = await getToken({ req });
 
-    return NextResponse.json({ participants: participants }, { status: 200 })
+    if (token) {
+        const folderName = `${process.env.PRESENTATION_FOLDER}`;
+        const meetingId = req.nextUrl.searchParams.get('meetingId');
+        if (!folderName) {
+            throw new Error(
+                "LEARNING_DASHBOARD_FOLDER is not defined in the environment variables",
+            );
+        }
+        if (!meetingId) {
+            throw new Error("parameter meetingId is required in the query string");
+        }
+        const fileName = `${folderName}${path.sep}${meetingId}${path.sep}slides_new.xml`
+        const dataXml = await fs.readFile(fileName, 'utf-8');
+        const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix : ""});
+        const dataJson = await parser.parse(dataXml);
+        const participants = await generateMessages(dataJson);
+
+        return NextResponse.json({ participants: participants }, { status: 200 })
+    } else {
+        const response = {
+          error: "Unauthorized",
+        };
+        const responseHeaders = {
+          status: 401,
+        };
+        return NextResponse.json(response, responseHeaders);
+    }
 }
