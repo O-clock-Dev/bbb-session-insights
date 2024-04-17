@@ -4,6 +4,29 @@ import { access } from "node:fs/promises";
 import { getToken } from "next-auth/jwt";
 import path from "node:path";
 
+// Data structure of the learning_dashboard_data.json file
+interface CourseData {
+  name: string;
+  createdOn: string;
+  endedOn: string;
+  intId: number;
+
+}
+
+// Data structure of the course object returned by the API
+interface Course {
+  id: number;
+  name: string;
+  dashboardUrl: string;
+  replayUrl: string | null;
+  presentationUrl: string | null;
+  creationDate: string;
+  endDate: string;
+  meetingId: string;
+  reportId: string;
+}
+interface Courses extends Array<Course> {}
+
 async function generateReplayUrl(meetingId: string) {
   try {
     const folderPath = `${process.env.REPLAYS_FOLDER}${path.sep}${meetingId}`;
@@ -11,6 +34,17 @@ async function generateReplayUrl(meetingId: string) {
     return `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
   } catch (error) {
     return null;
+  }
+}
+
+async function generatePresentationUrl(meetingId: string, reportId: string) {
+  try {
+      const folderPath = `${process.env.PRESENTATION_FOLDER}${path.sep}${meetingId}${path.sep}slides_new.xml`;
+      console.log("Checking folder:", folderPath);
+      await access(folderPath);
+      return `dashboards/messages/${meetingId}/${reportId}`;
+  } catch (error) {
+      return null;
   }
 }
 
@@ -24,7 +58,7 @@ export async function parseCourses() {
 
   try {
     const files = fs.readdirSync(folderName, { recursive: true }) as string[];
-    const courses = [];
+    const courses: Courses = [];
 
     for (const file of files) {
       if (file.endsWith("learning_dashboard_data.json")) {
@@ -42,14 +76,18 @@ export async function parseCourses() {
 
         // Call generateReplayUrl asynchronously and await its result
         const replayUrl = await generateReplayUrl(meetingId);
+        const presentationUrl = await generatePresentationUrl(meetingId, reportId);
 
         courses.push({
           name: courseName,
           id: courseId,
           dashboardUrl: dashboardUrl,
           replayUrl: replayUrl,
+          presentationUrl: presentationUrl,
           creationDate: courseCreationDate,
           endDate: courseEndDate,
+          meetingId: meetingId,
+          reportId: reportId,
         });
       }
     }

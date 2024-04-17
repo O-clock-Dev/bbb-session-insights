@@ -74,15 +74,14 @@ export async function parseCourse(meetingId: string, reportId: string) {
         const courseParticipants: CourseParticipant[] = [];
         for(const userKey in courseData.users) {
             const user = courseData.users[userKey];
-            // get only students (not moderators/teachers)
+            // get only participants (not moderators/teachers)
             if(!user.isModerator) {
                 // get only first intId
                 const intId = Object.keys(user.intIds)[0];
                 const intIdData = user.intIds[intId];
 
-                // search user in the list of students
+                // search user in the list of participants
                 const slug = slugify(user.name, {lower: true});
-                console.log(slug)
                 const participant = courseParticipants.find((participant) => participant.slug === slug);
                 if(participant !== undefined) {
                     // increment totalOfMessages

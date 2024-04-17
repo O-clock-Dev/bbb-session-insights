@@ -15,6 +15,7 @@ export function CourseListSkeleton() {
             </th>
             <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3"></th>
+            <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3">
               Date de création
             </th>
@@ -66,6 +67,14 @@ function CourseLine() {
           disabled
         >
           Replay
+        </button>
+      </td>
+      <td>
+        <button
+          className="text-gray-500 bg-gray-300 cursor-not-allowed focus:ring-4 focus:ring-gray-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-400 focus:outline-none dark:focus:ring-gray-800"
+          disabled
+        >
+          Messages
         </button>
       </td>
       <td className="px-6 py-4 font-bold">

@@ -11,25 +11,26 @@ interface Course {
   endDate: number;
   dashboardUrl: string;
   replayUrl: string;
+  presentationUrl: string;
 }
 interface Courses extends Array<Course> {}
 
 export default function CourseList() {
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
   const { data, error } = useSWR(
-    "dashboards/api/generate-courses-list",
+    "/dashboards/api/generate-courses-list",
     fetcher,
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
       revalidateIfStale: false,
-    },
+    }
   );
 
   const sortData = (data: Courses) => {
     return data
-      ? [...data].sort(
-          (a, b) => differenceInDays(new Date(a.creationDate), new Date(b.creationDate)),
+      ? [...data].sort((a, b) =>
+          differenceInDays(new Date(a.creationDate), new Date(b.creationDate))
         )
       : [];
   };
@@ -46,6 +47,7 @@ export default function CourseList() {
             <th scope="col" className="px-6 py-3">
               Nom de la session
             </th>
+            <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3"></th>
             <th scope="col" className="px-6 py-3">
@@ -90,6 +92,23 @@ export default function CourseList() {
                     disabled
                   >
                     Replay
+                  </button>
+                )}
+              </td>
+              <td>
+                {course.presentationUrl ? (
+                  <a
+                    className="text-white bg-amber-700 hover:bg-amber-800 focus:ring-4 focus:ring-amber-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-amber-600 dark:hover:bg-amber-700 focus:outline-none dark:focus:ring-amber-800"
+                    href={course.presentationUrl}
+                  >
+                    Messages
+                  </a>
+                ) : (
+                  <button
+                    className="text-gray-500 bg-gray-300 cursor-not-allowed focus:ring-4 focus:ring-gray-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-400 focus:outline-none dark:focus:ring-gray-800"
+                    disabled
+                  >
+                    Messages
                   </button>
                 )}
               </td>
