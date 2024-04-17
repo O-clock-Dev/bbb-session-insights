@@ -24,7 +24,7 @@ export default async function Home() {
             Liste des dashboard d&apos;activités apprenant sur{" "}
             {process.env.LEARNING_DASHBOARD_BASEURL}{" "}
           </div>
-          <CourseList></CourseList>
+          <CourseList />
         </div>
       </div>
     );

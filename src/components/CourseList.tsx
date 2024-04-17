@@ -2,6 +2,7 @@
 import useSWR from "swr";
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
 import { differenceInDays } from "date-fns";
+import { CourseListSkeleton } from "./CourseListSkeleton";
 
 interface Course {
   id: string;
@@ -25,8 +26,6 @@ export default function CourseList() {
     },
   );
 
-  console.log(data);
-
   const sortData = (data: Courses) => {
     return data
       ? [...data].sort(
@@ -37,17 +36,8 @@ export default function CourseList() {
 
   const sortedData = sortData(data);
 
+  if (!data) return <CourseListSkeleton />;
   if (error) return <div>Failed to load</div>;
-  if (!sortedData)
-    return (
-      <div
-        className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500"
-        role="status"
-        aria-label="loading"
-      >
-        <span className="sr-only">Chargement en cours...</span>
-      </div>
-    );
   return (
     <div className="mt-3 relative overflow-x-auto shadow-md sm:rounded-lg">
       <table className="w-full border-collapse text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -72,12 +62,12 @@ export default function CourseList() {
               key={course.id}
               className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
             >
-              <th
+              <td
                 scope="row"
                 className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
               >
                 {course.name}
-              </th>
+              </td>
               <td>
                 <a
                   className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
