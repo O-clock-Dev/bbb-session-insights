@@ -1,9 +1,20 @@
 "use client";
 import useSWR from "swr";
-const fetcher = (...args) => fetch(...args).then((res) => res.json());
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
+import { differenceInDays } from "date-fns";
+
+interface Course {
+  id: string;
+  name: string;
+  creationDate: number;
+  endDate: number;
+  dashboardUrl: string;
+  replayUrl: string;
+}
+interface Courses extends Array<Course> {}
 
 export default function CourseList() {
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
   const { data, error } = useSWR(
     "dashboards/api/generate-courses-list",
     fetcher,
@@ -14,10 +25,12 @@ export default function CourseList() {
     },
   );
 
-  const sortData = (data) => {
+  console.log(data);
+
+  const sortData = (data: Courses) => {
     return data
       ? [...data].sort(
-          (a, b) => new Date(b.creationDate) - new Date(a.creationDate),
+          (a, b) => differenceInDays(new Date(a.creationDate), new Date(b.creationDate)),
         )
       : [];
   };

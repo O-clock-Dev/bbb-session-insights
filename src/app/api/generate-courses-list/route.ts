@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import { access } from "node:fs/promises";
 import { getToken } from "next-auth/jwt";
+import path from "node:path";
 
 async function generateReplayUrl(meetingId: string) {
   try {
-    const folderPath = `${process.env.REPLAYS_FOLDER}/${meetingId}`;
+    const folderPath = `${process.env.REPLAYS_FOLDER}${path.sep}${meetingId}`;
     await access(folderPath);
-    return `${process.env.LEARNING_DASHBOARD_BASEURL}/playback/presentation/2.3/${meetingId}`;
+    return `${process.env.LEARNING_DASHBOARD_BASEURL}${path.sep}playback${path.sep}presentation${path.sep}2.3${path.sep}${meetingId}`;
   } catch (error) {
     return null;
   }
@@ -27,7 +28,7 @@ export async function parseCourses() {
 
     for (const file of files) {
       if (file.endsWith("learning_dashboard_data.json")) {
-        const filePath = `${folderName}/${file}`;
+        const filePath = `${folderName}${path.sep}${file}`;
         const jsonData = fs.readFileSync(filePath);
         // @ts-ignore
         const courseData = JSON.parse(jsonData);
@@ -35,8 +36,8 @@ export async function parseCourses() {
         const courseCreationDate = courseData.createdOn;
         const courseEndDate = courseData.endedOn;
         const courseId = courseData.intId;
-        const meetingId = file.split("/")[0];
-        const reportId = file.split("/")[1].split(".")[0];
+        const meetingId = file.split(path.sep)[0];
+        const reportId = file.split(path.sep)[1].split(".")[0];
         const dashboardUrl = `${process.env.LEARNING_DASHBOARD_BASEURL}/learning-analytics-dashboard/?meeting=${meetingId}&report=${reportId}&lang=fr`;
 
         // Call generateReplayUrl asynchronously and await its result
