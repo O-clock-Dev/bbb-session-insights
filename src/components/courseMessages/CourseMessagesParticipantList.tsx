@@ -30,7 +30,7 @@ export default function ParticipantList({courseData, meetingId, reportId, select
                             )}
                         >
                             <dt className="mb-1 text-gray-400 md:text-base px-5 flex items-center justify-between">
-                                <span className="text-xs">{participant.name}&nbsp;-&nbsp;</span>
+                                <span className="text-md">{participant.name}&nbsp;-&nbsp;</span>
                                 <span className="text-xs">{participant.totalOfMessages} messages</span>
                             </dt>
                         </Link>
