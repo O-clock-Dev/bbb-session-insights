@@ -13,7 +13,7 @@ export default function CourseList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 50;
 
   const { data, error } = useSWR(
     "dashboards/api/generate-courses-list",
