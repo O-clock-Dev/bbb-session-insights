@@ -3,7 +3,7 @@ import fs, { stat } from "node:fs";
 import { access } from "node:fs/promises";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { getToken } from "next-auth/jwt";
-
+let coursesDev = null;
 async function generateReplayUrl(meetingId) {
   try {
     const folderPath = `${process.env.REPLAYS_FOLDER}/${meetingId}`;
@@ -18,6 +18,10 @@ async function generateReplayUrl(meetingId) {
 }
 
 export async function parseCourses() {
+  if (process.env.NODE_ENV === "development") {
+    coursesDev = require("@datas/coursesDev.json");
+    return coursesDev;
+  }
   const folderName = process.env.LEARNING_DASHBOARD_FOLDER;
   if (!folderName) {
     throw new Error(
@@ -55,7 +59,6 @@ export async function parseCourses() {
         });
       }
     }
-
     return courses;
   } catch (error) {
     console.error(error);
@@ -65,7 +68,7 @@ export async function parseCourses() {
 
 export async function GET(req, res) {
   const token = await getToken({ req });
-  if (token) {
+  if (token || process.env.SKIP_KEYCLOAK === "true") {
     try {
       const result = await parseCourses();
       return NextResponse.json(result);
