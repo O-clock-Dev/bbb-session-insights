@@ -3,11 +3,13 @@ import { authOptions } from "./api/auth/[...nextauth]/route";
 import Login from "../components/Login";
 import CourseList from "../components/CourseList";
 
-function isAuthorized(email) {
-  return email.endsWith('@oclock.io');
+function isAuthorized(email: string | null | undefined) {
+  if (!email) return false;
+  return email.endsWith("@oclock.io");
 }
 
 export default async function Home() {
+  // @ts-ignore
   const session = await getServerSession(authOptions);
   if (session && isAuthorized(session.user.email) || process.env.SKIP_KEYCLOAK === 'true') {
     return (
@@ -22,7 +24,7 @@ export default async function Home() {
             Liste des dashboard d&apos;activités apprenant sur{" "}
             {process.env.LEARNING_DASHBOARD_BASEURL}{" "}
           </div>
-          <CourseList></CourseList>
+          <CourseList />
         </div>
       </div>
     );

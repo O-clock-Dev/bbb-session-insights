@@ -7,6 +7,19 @@ import Pagination from "@/components/Pagination";
 import { sortData, splitName, capitalizeFirstLetter, getPageNumbers } from "@/utils/stringsUtils";
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
+import { differenceInDays } from "date-fns";
+import { CourseListSkeleton } from "./CourseListSkeleton";
+
+interface Course {
+  id: string;
+  name: string;
+  creationDate: number;
+  endDate: number;
+  dashboardUrl: string;
+  replayUrl: string;
+  presentationUrl: string;
+}
+interface Courses extends Array<Course> { }
 
 export default function CourseList() {
   const [selectedPromotion, setSelectedPromotion] = useState("");
@@ -16,7 +29,7 @@ export default function CourseList() {
   const itemsPerPage = 50;
 
   const { data, error } = useSWR(
-    "dashboards/api/generate-courses-list",
+    "/dashboards/api/generate-courses-list",
     fetcher,
     {
       revalidateOnFocus: true,
@@ -83,6 +96,7 @@ export default function CourseList() {
     setSortConfig({ key, direction });
   };
 
+  if (!data) return <CourseListSkeleton />;
   if (error) return <div>Failed to load</div>;
   if (!sortedData)
     return (

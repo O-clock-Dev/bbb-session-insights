@@ -1,7 +1,7 @@
 import { JWT, getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-function logoutParams(token) {
+function logoutParams(token: JWT) {
   return {
     post_logout_redirect_uri: process.env.NEXTAUTH_URL,
     id_token_hint: token.idToken,
@@ -14,18 +14,18 @@ function handleEmptyToken() {
   return NextResponse.json(response, responseHeaders);
 }
 
-function sendEndSessionEndpointToURL(token) {
+function sendEndSessionEndpointToURL(token: JWT) {
   const endSessionEndPoint = new URL(
     `${process.env.KEYCLOAK_ISSUER}/protocol/openid-connect/logout`,
   );
   const params = logoutParams(token);
+  // @ts-ignore
   endSessionEndPoint.search = new URLSearchParams(params).toString();
   const response = { url: endSessionEndPoint.href };
-  console.log(response);
   return NextResponse.json(response);
 }
 
-export async function GET(req) {
+export async function GET(req: NextRequest) {
   try {
     const token = await getToken({ req });
     if (token) {
