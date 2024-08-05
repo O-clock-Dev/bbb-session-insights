@@ -83,14 +83,14 @@ async function generateMessages(dataJson: any, meetingStartTime: string, searche
 }
 
 async function parseMessagesFile(meetingId: string, reportId: string, searchedParticipantSlug: string) {
-    const folderName = `${process.env.PRESENTATION_FOLDER}`;
+    const folderName = `${process.env.LEARNING_DASHBOARD_FOLDER}`;
     if (!folderName) {
         throw new Error(
             "LEARNING_DASHBOARD_FOLDER is not defined in the environment variables",
         );
     }
 
-    const fileName = `${folderName}${path.sep}${meetingId}${path.sep}slides_new.xml`
+    const fileName = `${folderName}${path.sep}${meetingId}${path.sep}${reportId}${path.sep}slides_new.xml`
     const dataXml = await fs.readFile(fileName, 'utf-8');
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix : ""});
     const dataJson = await parser.parse(dataXml);
@@ -107,7 +107,8 @@ export async function GET(
 ) {
     const token = await getToken({ req });
 
-    if (token) {
+    if (token   || process.env.SKIP_KEYCLOAK === "true") {
+        try {
         const meetingId = req.nextUrl.searchParams.get('meetingId');
         const reportId = req.nextUrl.searchParams.get('reportId');
         const participantSlug = req.nextUrl.searchParams.get('participantSlug');
@@ -124,6 +125,16 @@ export async function GET(
         const participant = await parseMessagesFile(meetingId, reportId, participantSlug);
 
         return NextResponse.json({ participant: participant }, { status: 200 })
+    } catch (error) {
+        console.error(error);
+        const response = {
+            error: error.message,
+        };
+        const responseHeaders = {
+            status: 500,
+        };
+        return NextResponse.json(response, responseHeaders);
+    }
     } else {
         const response = {
           error: "Unauthorized",

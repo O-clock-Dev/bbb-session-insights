@@ -122,7 +122,7 @@ export async function parseCourse(meetingId: string, reportId: string) {
 
 export async function GET(req: NextRequest) {
     const token = await getToken({ req });
-    if (token) {
+    if (token  || process.env.SKIP_KEYCLOAK === "true") {
     try {
         const meetingId = req.nextUrl.searchParams.get('meetingId');
         const reportId = req.nextUrl.searchParams.get('reportId');
