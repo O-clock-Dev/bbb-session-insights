@@ -18,7 +18,7 @@ function requestRefreshOfAccessToken(token: any) {
 
 const providers = [];
 
-if (process.env.SKIP_KEYCLOAK !== 'true') {
+if (!process.env.AUTH_KEYCLOAK) {
   providers.push(
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_CLIENT_ID!,

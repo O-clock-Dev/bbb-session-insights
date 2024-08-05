@@ -11,7 +11,7 @@ function isAuthorized(email: string | null | undefined) {
 export default async function Home() {
   // @ts-ignore
   const session = await getServerSession(authOptions);
-  if (session && isAuthorized(session.user.email) || process.env.SKIP_KEYCLOAK === 'true') {
+  if (session && isAuthorized(session.user.email) || !process.env.AUTH_KEYCLOAK) {
     return (
       <div className="flex flex-col justify-center items-center text-2xl">
         <div className="items-center justify-center border-1 flex flex-col">

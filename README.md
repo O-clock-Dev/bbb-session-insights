@@ -34,6 +34,7 @@
 
     ```
     # Keycloak config
+    AUTH_KEYCLOAK=false
     KEYCLOAK_CLIENT_ID="learning-dashboard-listing"
     KEYCLOAK_CLIENT_SECRET="secret super sécurisé"
     KEYCLOAK_ISSUER="https://auth.oclock.io/realms/oclock"
@@ -44,14 +45,17 @@
     LEARNING_DASHBOARD_FOLDER="/chemin/vers/learning-dashboard"
     LEARNING_DASHBOARD_BASEURL="https://bbb1.oclock.school"
     REPLAYS_FOLDER="/chemin/vers/published/presentation"
-    SKIP_KEYCLOAK=false
     ```
 
-    Dev : La configuration Keycloak n'est pas necessaire si vous utilisz ``SKIP_KEYCLOAK=true``
-    Pareil en mode Dev une liste préfaite de ligne est importé dans le fichier "datas/coursesDev.json" ce fichier peut-etre récupéré en production (si vous le voulez a jour) via <https://playback.oclock.school/dashboards/api/generate-courses-list>
+    Dev : La configuration Keycloak n'est pas necessaire si vous utilisz ``AUTH_KEYCLOAK=false``
 
+5. Stucture du dossier
 
-5. Lancez l'application :
+   Une liste préfaite de ligne est importé dans le fichier "datas/coursesDev.json" ce fichier peut-etre récupéré en production (si vous le voulez a jour) via <https://playback.oclock.school/dashboards/api/generate-courses-list>
+
+    Il y'a également dans datas/ un dossier ``MeetingId_dev`` et ``ReportId_dev`` qui simule la structure d'un cours avec MeetingId et ReportId. Le contenu de ce dossier possède un dashboard et des messages d'utilisateurs.
+
+6. Lancez l'application :
 
     ```bash
     npm build
