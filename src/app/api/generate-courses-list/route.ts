@@ -100,7 +100,7 @@ export async function parseCourses() {
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
-  if (token || !process.env.AUTH_KEYCLOAK) {
+  if (token || process.env.AUTH_KEYCLOAK === "false") {
     try {
       const result = await parseCourses();
       return NextResponse.json(result);

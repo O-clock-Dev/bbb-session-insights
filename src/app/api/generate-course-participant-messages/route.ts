@@ -107,7 +107,7 @@ export async function GET(
 ) {
     const token = await getToken({ req });
 
-    if (token   || !process.env.AUTH_KEYCLOAK) {
+    if (token || process.env.AUTH_KEYCLOAK === "false") {
         try {
         const meetingId = req.nextUrl.searchParams.get('meetingId');
         const reportId = req.nextUrl.searchParams.get('reportId');
