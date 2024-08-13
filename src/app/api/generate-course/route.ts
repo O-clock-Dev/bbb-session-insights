@@ -2,7 +2,6 @@ import { NextResponse, NextRequest } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import process from 'process';
-import { access } from "node:fs/promises";
 import { getToken } from "next-auth/jwt";
 import slugify from 'slugify';
 
@@ -12,9 +11,11 @@ interface CourseDataUserIntId {
     registeredOn: string;
     leftOn: string;
 }
+
 interface CourseDataUserIntIdObject {
     [key: string]: CourseDataUserIntId;
 }
+
 interface CourseDataUser {
     [key: string]: any;
     userKey: string;
@@ -23,10 +24,11 @@ interface CourseDataUser {
     intIds: CourseDataUserIntIdObject;
     totalOfMessages: number;
 }
+
 interface CourseDataUserObject {
-    // multiple users
     [key: string]: CourseDataUser;
 }
+
 interface CourseData {
     name: string;
     createdOn: string;
@@ -44,6 +46,7 @@ interface CourseParticipant {
     leftOn: string;
     totalOfMessages: number;
 }
+
 interface Course {
     id: number;
     name: string;
@@ -53,7 +56,7 @@ interface Course {
     participants: CourseParticipant[];
 }
 
-export async function parseCourse(meetingId: string, reportId: string) {
+async function parseCourse(meetingId: string, reportId: string) {
     const folderName = process.env.LEARNING_DASHBOARD_FOLDER;
     if (!folderName) {
         throw new Error(
@@ -74,17 +77,13 @@ export async function parseCourse(meetingId: string, reportId: string) {
         const courseParticipants: CourseParticipant[] = [];
         for(const userKey in courseData.users) {
             const user = courseData.users[userKey];
-            // get only participants (not moderators/teachers)
             if(!user.isModerator) {
-                // get only first intId
                 const intId = Object.keys(user.intIds)[0];
                 const intIdData = user.intIds[intId];
 
-                // search user in the list of participants
                 const slug = slugify(user.name, {lower: true});
                 const participant = courseParticipants.find((participant) => participant.slug === slug);
                 if(participant !== undefined) {
-                    // increment totalOfMessages
                     participant.totalOfMessages += user.totalOfMessages;
                 } else {
                     const courseParticipant: CourseParticipant = {
@@ -100,7 +99,6 @@ export async function parseCourse(meetingId: string, reportId: string) {
             }
         }
 
-        // sort students by name
         courseParticipants.sort((a, b) => a.name.localeCompare(b.name));
 
         const dashboardUrl = `${process.env.LEARNING_DASHBOARD_BASEURL}/learning-analytics-dashboard/?meeting=${meetingId}&report=${reportId}&lang=fr`;
@@ -123,27 +121,27 @@ export async function parseCourse(meetingId: string, reportId: string) {
 export async function GET(req: NextRequest) {
     const token = await getToken({ req });
     if (token) {
-    try {
-        const meetingId = req.nextUrl.searchParams.get('meetingId');
-        const reportId = req.nextUrl.searchParams.get('reportId');
-        if(!meetingId) {
-            throw new Error("parameter meetingId is required in the query string");
+        try {
+            const meetingId = req.nextUrl.searchParams.get('meetingId');
+            const reportId = req.nextUrl.searchParams.get('reportId');
+            if(!meetingId) {
+                throw new Error("parameter meetingId is required in the query string");
+            }
+            if(!reportId) {
+                throw new Error("parameter reportId is required in the query string");
+            }
+            const result = await parseCourse(meetingId, reportId);
+            return NextResponse.json(result);
+        } catch (error) {
+            console.error(error);
+            const response = {
+                error: error.message,
+            };
+            const responseHeaders = {
+                status: 500,
+            };
+            return NextResponse.json(response, responseHeaders);
         }
-        if(!reportId) {
-            throw new Error("parameter reportId is required in the query string");
-        }
-        const result = await parseCourse(meetingId, reportId);
-        return NextResponse.json(result);
-    } catch (error) {
-        console.error(error);
-        const response = {
-            error: error.message,
-        };
-        const responseHeaders = {
-            status: 500,
-        };
-        return NextResponse.json(response, responseHeaders);
-    }
     } else {
         const response = {
             error: "Unauthorized",

@@ -36,13 +36,13 @@ export default function CourseMessagesList({meetingId, reportId, participantSlug
         );
     return (
         <div>
-                <p className={"text-2xl text-center mb-10 text-red-400"}>Messages de l'apprenant sélectionné
+                <p className={"text-2xl text-center mb-10 text-red-400"}>Messages de l&apos;apprenant sélectionné
                     - {participant.name ? participant.name : participant.slug} - {participant.messages.length} messages</p>
                 {participant?.messages.length === 0 &&
                     <p className={"text-center text-lg text-gray-500"}>Aucun message pour cet apprenant</p>}
                 <div className={"m-10"}>
                     {participant?.messages.map((messageInfo: { message: string; timestamp: number; }) => (
-                        <div className="pl-10 py-1 flex border-b border-b-1 border-gray-600">
+                        <div key={messageInfo.timestamp || index} className="pl-10 py-1 flex border-b border-b-1 border-gray-600">
                             <span
                                 className="mx-5 text-gray-500 md:text-lg dark:text-gray-400 w-1/4">{ConvertUnixTimestamp(messageInfo.timestamp)}</span>
                             <span className="text-lg w-3/4">{messageInfo.message}</span>
