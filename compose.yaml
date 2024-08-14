@@ -1,15 +1,13 @@
-version: "3"
+name: bbb-session-insights
 
 services:
-  dashboards:
-    container_name: dashboards
+  bsi:
+    container_name: bsi
     env_file: .env
     build:
       context: .
     ports:
-      - 127.0.0.1:6666:3000
-    logging:
-      driver: journald
+      - 3000:3000
     volumes:
       - /var/bigbluebutton/learning-dashboard/:/data
       - /var/bigbluebutton/published/presentation:/replays

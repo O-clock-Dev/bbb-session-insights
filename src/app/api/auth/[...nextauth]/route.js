@@ -17,8 +17,10 @@ function requestRefreshOfAccessToken(token) {
   });
 }
 
-export const authOptions = {
-  providers: [
+const providers = [];
+
+if (process.env.SKIP_KEYCLOAK !== 'true') {
+  providers.push(
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_CLIENT_ID,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
@@ -31,8 +33,12 @@ export const authOptions = {
           name: profile.name ?? profile.preferred_username,
         };
       },
-    }),
-  ],
+    })
+  );
+}
+
+export const authOptions = {
+  providers,
   session: {
     strategy: "jwt",
     maxAge: 60 * 30,
