@@ -9,5 +9,5 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - /var/bigbluebutton:/var/bigbluebutton
-
+      - /var/bigbluebutton/learning-dashboard/:/data
+      - /var/bigbluebutton/published/presentation:/replays
