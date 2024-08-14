@@ -1,5 +1,10 @@
 # Dashboard Learning Listing
 
+> **dataset nécéssaire pour cette branche de développement**
+
+* Télécharger le dataset suivant (privé o'clock) : https://drive.google.com/file/d/1772JIiIe9WbYtItGNp-nyCT4z0i5AZxK/view?usp=sharing
+* Placer les données dans un répertoire à la rachine `datas`
+
 ## Description
 
 **Dashboard Learning Listing** est un projet visant à lister toutes les sessions de formation des promotions chez O'clock qui ont lieu sur BigBlueButton (BBB). Ce dashboard permet aux utilisateurs de visualiser et de suivre facilement toutes les sessions de formation en cours et passées, ainsi que d'obtenir des détails sur chaque session.
@@ -49,7 +54,6 @@
 
     Dev : La configuration Keycloak n'est pas necessaire si vous utilisz ``SKIP_KEYCLOAK=true``
     Pareil en mode Dev une liste préfaite de ligne est importé dans le fichier "datas/coursesDev.json" ce fichier peut-etre récupéré en production (si vous le voulez a jour) via <https://playback.oclock.school/dashboards/api/generate-courses-list>
-
 
 5. Lancez l'application :
 
