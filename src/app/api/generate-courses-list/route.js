@@ -18,7 +18,7 @@ async function generateReplayUrl(meetingId) {
 }
 
 export async function parseCourses() {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "localdev") {
     coursesDev = require("@datas/coursesDev.json");
     return coursesDev;
   }

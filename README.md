@@ -4,6 +4,7 @@
 
 * Télécharger le dataset suivant (privé o'clock) : https://drive.google.com/file/d/1772JIiIe9WbYtItGNp-nyCT4z0i5AZxK/view?usp=sharing
 * Placer les données dans un répertoire à la rachine `datas`
+* Utilisez le `NODE_ENV` avec `localdev` pour utiliser le dataset local
 
 ## Description
 
