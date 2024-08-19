@@ -16,7 +16,7 @@ export default function CourseList() {
   const itemsPerPage = 50;
 
   const { data, error } = useSWR(
-    "dashboards/api/generate-courses-list",
+    `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/generate-courses-list`,
     fetcher,
     {
       revalidateOnFocus: true,
