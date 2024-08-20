@@ -7,7 +7,7 @@ services:
     build:
       context: .
     ports:
-      - 3000:3000
+      - 3333:3000
     volumes:
       - /var/bigbluebutton/learning-dashboard/:/data
       - /var/bigbluebutton/published/presentation:/replays
