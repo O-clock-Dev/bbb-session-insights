@@ -23,12 +23,12 @@ Open source AGPLv3 software for BigBlueButton session analysis.
 ### Installation
 
 1. Clone the repository :
-    ``bash
+    ```bash
     git clone https://github.com/O-clock-Dev/bbb-session-insights.git
     cd bbb-session-insights
     ```
 2. Generate the NextAuth key :
-    ``bash
+    ```bash
     openssl rand -base64 32
     ```
 3. Setting up an `.env` file
