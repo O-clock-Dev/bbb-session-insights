@@ -1,73 +1,80 @@
 # bbb-session-insights
 
-AGPLv3 open source insights software for BigBlueButton sessions.
-
-> **dataset nécéssaire pour cette branche de développement**
-
-* Télécharger le dataset suivant (privé o'clock) : https://drive.google.com/file/d/1772JIiIe9WbYtItGNp-nyCT4z0i5AZxK/view?usp=sharing
-* Placer les données dans un répertoire à la rachine `datas`
-* Utilisez le `NODE_ENV` avec `localdev` pour utiliser le dataset local
+Open source AGPLv3 software for BigBlueButton session analysis.
 
 ## Description
 
-**Dashboard Learning Listing** est un projet visant à lister toutes les sessions de formation des promotions chez O'clock qui ont lieu sur BigBlueButton (BBB). Ce dashboard permet aux utilisateurs de visualiser et de suivre facilement toutes les sessions de formation en cours et passées, ainsi que d'obtenir des détails sur chaque session.
+**bbb-session-insights** is a project initially aimed at listing all training sessions for O'clock promotions taking place on BigBlueButton (BBB). It is now open source and available to everyone. This dashboard allows users to easily view and track all current and past training sessions, as well as obtain details on each session:
+- Learning dashboard (can be accessed and downloaded after the session has ended)
+- Recordings (called Replays)
+- Video (*planned*)
+- Chat messages (*planned*)
 
-## Prérequis
+![Preview of bbb-session-insights software](docs/img/image.png)
 
-- Next.js (version 14 ou supérieure)
-- npm (version 6 ou supérieure)
+## Setup
 
-## Installation
+### Requirements
 
-1. Clonez le dépôt :
+- Next.js >= v14
+- npm >= v6
+- Docker engine with compose support
 
-    ```bash
-    git clone https://github.com/O-clock-Dev/learning-dashboard-listing.git
-    cd learning-dashboard-listing
+### Installation
+
+1. Clone the repository :
+    ``bash
+    git clone https://github.com/O-clock-Dev/bbb-session-insights.git
+    cd bbb-session-insights
     ```
-
-2. Installez les dépendances :
-
-    ```bash
-    npm install
-    ```
-
-3. Générez la clé NextAuth :
-
-    ```bash
+2. Generate the NextAuth key :
+    ``bash
     openssl rand -base64 32
     ```
+3. Setting up an `.env` file
+    * Draw your inspiration from `.example.env`.
+    * Or the [Configuration](#configuration) section.
 
-4. Configurez les variables d'environnement en créant un fichier `.env` à la racine du projet et en y ajoutant les informations suivantes :
+### Configuration
 
-    ```
-    # Keycloak config
-    KEYCLOAK_CLIENT_ID="learning-dashboard-listing"
-    KEYCLOAK_CLIENT_SECRET="secret super sécurisé"
-    KEYCLOAK_ISSUER="https://auth.oclock.io/realms/oclock"
-    # NextAuth config
-    NEXTAUTH_URL="http://localhost:3000"
-    NEXTAUTH_SECRET="secret nextauth généré avec openssl rand -base64 32"
-    # NextJS
-    ## Set empty if base url is just sub.domain.tld/
-    NEXT_PUBLIC_BASE_PATH="/bsi" 
-    # App config
-    LEARNING_DASHBOARD_FOLDER="/chemin/vers/learning-dashboard"
-    LEARNING_DASHBOARD_BASEURL="https://bbb1.oclock.school"
-    REPLAYS_FOLDER="/chemin/vers/published/presentation"
-    SKIP_KEYCLOAK=false
-    ```
+#### env file
 
-    Dev : La configuration Keycloak n'est pas necessaire si vous utilisz ``SKIP_KEYCLOAK=true``
-    Pareil en mode Dev une liste préfaite de ligne est importé dans le fichier "datas/coursesDev.json" ce fichier peut-etre récupéré en production (si vous le voulez a jour) via <https://playback.oclock.school/dashboards/api/generate-courses-list>
+> NextJS supports [current env files and priorities](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables)
 
-5. Lancez l'application :
+* Check file [`.example.env`](.example.env)
+* OIDC Keycloak configuration
+    * `SKIP_KEYCLOAK=true` : avoid OIDC authentication.
+    * `KEYCLOAK_CLIENT_ID=“client-id”` : KC OIDC client ID, see [keycloak documentation](https://www.keycloak.org/docs/latest/server_admin/#_identity_broker_oidc).
+    * `KEYCLOAK_CLIENT_SECRET=“ secret”` : KC OIDC client secret.
+    * `KEYCLOAK_ISSUER=” https://auth.mydomain.io/realms/myrealm ”` : your Keycloak kingdom.
+* NextAuth config (see [#options](https://next-auth.js.org/configuration/options))
+    * `NEXTAUTH_URL=” http://localhost:3000 ”`: environment variable for your site's canonical URL, supports dynamic base path via `NEXT_PUBLIC_BASE_PATH`.
+    * `NEXTAUTH_SECRET=” <output from openssl rand -base64 32> ”`: used to encrypt NextAuth.js JWT, and to hash email verification tokens.
+* NextJS
+    * `NEXT_PUBLIC_BASE_PATH=” /bsi ”`: dynamic basePath support used to offer reverse proxy support for a single URL or URL path segment.
+* Application configuration
+    * `LEARNING_DASHBOARD_FOLDER=”/folder/learning-dashboard”`: location of BBB learning dashboard folder.
+    * `LEARNING_DASHBOARD_BASEURL=”https://bbb.mydomain.school”`: URL of the BBB server used to host the public BBB session data link.
+    * `REPLAYS_FOLDER=”/folder/published/presentation”`: location of the BBB records folder.
 
-    ```bash
-    npm build
-    npm start
-    ```
+#### SSO
 
-## Utilisation
+* SSO configuration is optional, use `SKIP_KEYCLOAK=true` if you want to avoid using OIDC Keycloak authentication.
 
-Une fois l'application lancée, ouvrez votre navigateur et accédez à `http://localhost:3000`. Vous pourrez alors naviguer dans le tableau de bord pour voir toutes les sessions de formation des promotions chez O'clock.
+#### Local development
+
+> **A dataset is required for local development.
+
+* For the moment, our dataset is private.
+    * We will make it public [in the future](https://github.com/O-clock-Dev/bbb-session-insights/issues/16)
+    * Download the private [dataset](https://drive.google.com/file/d/1772JIiIe9WbYtItGNp-nyCT4z0i5AZxK/view?usp=sharing)
+* Extract it into a `datas` directory.
+* Use `NODE_ENV` with `localdev` to use the local dataset.
+
+#### Development using BBB data
+
+* Check `compose.yaml` and `.example.env` and mount the `/var/bigbluebutton` subdirectories in the correct destinations.
+
+## Usage
+
+* Access your instance according to your `NEXTAUTH_URL` parameter or your reverse proxy configuration and enjoy the list of data from your BBB sessions.
