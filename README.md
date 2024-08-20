@@ -75,6 +75,17 @@ Open source AGPLv3 software for BigBlueButton session analysis.
 
 * Check `compose.yaml` and `.example.env` and mount the `/var/bigbluebutton` subdirectories in the correct destinations.
 
+### Launching
+
+> The preferred method is **docker**.
+
+* Docker :
+    * `docker compose up --build -d`
+* npm :
+    * `npm run dev`: for development.
+    * `npm run build` : to build the application.
+    * `npm run start` : starts the built application.
+
 ## Usage
 
 * Access your instance according to your `NEXTAUTH_URL` parameter or your reverse proxy configuration and enjoy the list of data from your BBB sessions.
