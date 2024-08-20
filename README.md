@@ -48,6 +48,9 @@ AGPLv3 open source insights software for BigBlueButton sessions.
     # NextAuth config
     NEXTAUTH_URL="http://localhost:3000"
     NEXTAUTH_SECRET="secret nextauth généré avec openssl rand -base64 32"
+    # NextJS
+    ## Set empty if base url is just sub.domain.tld/
+    NEXT_PUBLIC_BASE_PATH="/bsi" 
     # App config
     LEARNING_DASHBOARD_FOLDER="/chemin/vers/learning-dashboard"
     LEARNING_DASHBOARD_BASEURL="https://bbb1.oclock.school"
