@@ -1,20 +1,3 @@
-export const sortData = (data) => {
-    return data
-        ? [...data].sort(
-            (a, b) => new Date(b.creationDate) - new Date(a.creationDate)
-        )
-        : [];
-};
-
-export const splitName = (course) => {
-    return {
-        id: course.id,
-        promotion: course.name.split("-")[0],
-        season: course.name.split("-")[1],
-        name: course.name.split("-")[2],
-    };
-};
-
 export const capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };

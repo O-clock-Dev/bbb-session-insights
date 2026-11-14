@@ -1,78 +1,62 @@
 "use client";
 import useSWR from "swr";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import PromotionSelect from "@/components/PromotionSelect";
 import Pagination from "@/components/Pagination";
-import { sortData, splitName, capitalizeFirstLetter, getPageNumbers } from "@/utils/stringsUtils";
-const fetcher = (...args) => fetch(...args).then((res) => res.json());
+import { capitalizeFirstLetter, getPageNumbers } from "@/utils/stringsUtils";
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
+
+const ITEMS_PER_PAGE = 50;
+const SEARCH_DEBOUNCE_MS = 300;
+const API_URL = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/generate-courses-list`;
+
+const fetcher = async (url) => {
+  const res = await fetch(url);
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+  return body;
+};
 
 export default function CourseList() {
   const [selectedPromotion, setSelectedPromotion] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
 
-  const { data, error } = useSWR(
-    `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/generate-courses-list`,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      revalidateIfStale: false,
-    }
-  );
+  // Only query the API once the user stops typing.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const sortedData = sortData(data);
+  const params = new URLSearchParams({
+    page: String(currentPage),
+    limit: String(ITEMS_PER_PAGE),
+  });
+  if (selectedPromotion) params.set("promotion", selectedPromotion);
+  if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+  if (sortConfig.key) {
+    params.set("sort", sortConfig.key);
+    params.set("order", sortConfig.direction);
+  }
 
-  const sortedDataPromo = sortedData?.map((course) => splitName(course));
-  const uniquePromotions = [
-    ...new Set(
-      sortedDataPromo
-        .map((course) => course.promotion.trim().toLowerCase())
-        .filter((promotion) => !promotion.includes("'s room"))
-        .filter((promotion) => !promotion.includes(" "))
-    ),
-  ].sort();
-
-  const filteredData = sortedData
-    .filter((course) =>
-      selectedPromotion
-        ? course.name.toLowerCase().includes(selectedPromotion.toLowerCase())
-        : true
-    )
-    .filter((course) =>
-      searchTerm
-        ? course.name.toLowerCase().includes(searchTerm.toLowerCase())
-        : true
-    );
-
-  const sortedFilteredData = filteredData.sort((a, b) => {
-    if (sortConfig.key) {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
-      if (aValue < bValue) {
-        return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "asc" ? 1 : -1;
-      }
-    }
-    return 0;
+  const { data, error, isLoading } = useSWR(`${API_URL}?${params}`, fetcher, {
+    keepPreviousData: true,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    revalidateIfStale: false,
   });
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = sortedFilteredData.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  const totalPages = Math.ceil(sortedFilteredData.length / itemsPerPage);
+  const uniquePromotions = data?.promotions ?? [];
+  const currentItems = data?.items ?? [];
+  const totalItems = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+  const startIndex = ((data?.page ?? currentPage) - 1) * ITEMS_PER_PAGE;
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   const requestSort = (key) => {
@@ -81,10 +65,11 @@ export default function CourseList() {
       direction = "desc";
     }
     setSortConfig({ key, direction });
+    setCurrentPage(1);
   };
 
-  if (error) return <div>Failed to load</div>;
-  if (!sortedData)
+  if (error) return <div>Impossible de charger les sessions : {error.message}</div>;
+  if (isLoading && !data)
     return (
       <div
         className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500"
@@ -211,7 +196,7 @@ export default function CourseList() {
         getPageNumbers={() => getPageNumbers(currentPage, totalPages)}
         startIndex={startIndex}
         currentItemsLength={currentItems.length}
-        totalItems={sortedFilteredData.length}
+        totalItems={totalItems}
       />
     </>
   );
