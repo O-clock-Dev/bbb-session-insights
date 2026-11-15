@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import PromotionSelect from "@/components/PromotionSelect";
 import Pagination from "@/components/Pagination";
-import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
+import { dayOffset, formatDay, formatDuration, formatFull, formatTime } from "@/utils/dateFormat";
 
 const ITEMS_PER_PAGE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -15,6 +15,56 @@ const fetcher = async (url) => {
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
   return body;
+};
+
+const hasEnd = (course) => course.endDate >= course.creationDate;
+
+const actionButton =
+  "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-800";
+
+const ChartIcon = () => (
+  <svg className="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
+  </svg>
+);
+
+const PlayIcon = () => (
+  <svg className="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11.1-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14Z" />
+  </svg>
+);
+
+const SortableHeader = ({ label, sortKey, sortConfig, onSort }) => {
+  const isActive = sortConfig.key === sortKey;
+  const direction = isActive ? sortConfig.direction : null;
+  return (
+    <th
+      scope="col"
+      className="px-6 py-3"
+      aria-sort={direction ? (direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={`group inline-flex items-center gap-1 uppercase tracking-wide hover:text-gray-900 dark:hover:text-white ${
+          isActive ? "text-gray-900 dark:text-white" : ""
+        }`}
+      >
+        {label}
+        <svg
+          className={`w-3.5 h-3.5 transition ${isActive ? "opacity-100" : "opacity-30 group-hover:opacity-70"} ${
+            direction === "asc" ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+    </th>
+  );
 };
 
 export default function CourseList() {
@@ -48,6 +98,8 @@ export default function CourseList() {
     revalidateIfStale: false,
   });
 
+  // With keepPreviousData, the previous page stays on screen while the next one loads.
+  const isFetching = isLoading && Boolean(data);
   const promotions = data?.promotions ?? [];
   const currentItems = data?.items ?? [];
   const totalItems = data?.total ?? 0;
@@ -107,88 +159,102 @@ export default function CourseList() {
         />
       </div>
       <hr className="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700" />
-      <div ref={tableRef} className="mt-3 relative overflow-x-auto shadow-md sm:rounded-lg scroll-mt-4">
-        <table className="w-full border-collapse text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+      <div
+        ref={tableRef}
+        className={`relative w-[calc(100vw-2rem)] max-w-6xl overflow-x-auto rounded-xl border border-gray-200 shadow-sm scroll-mt-4 transition-opacity dark:border-gray-700 ${
+          isFetching ? "opacity-60" : ""
+        }`}
+        aria-busy={isFetching}
+      >
+        {/* Keep the column order and the <th> holding the bare name: the Dashboard+ script
+            served with the production page reads them. */}
+        <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+          <thead className="text-xs font-semibold tracking-wide text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/60 dark:text-gray-400">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 cursor-pointer"
-                onClick={() => requestSort("name")}
-              >
-                Nom de la session
-                {sortConfig.key === "name" ? (
-                  sortConfig.direction === "asc" ? " ▲" : " ▼"
-                ) : null}
+              <SortableHeader label="Session" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+              <th scope="col" className="px-2 py-3">
+                <span className="sr-only">Tableau de bord</span>
               </th>
-              <th scope="col" className="px-6 py-3"></th>
-              <th scope="col" className="px-6 py-3"></th>
-              <th
-                scope="col"
-                className="px-6 py-3 cursor-pointer"
-                onClick={() => requestSort("creationDate")}
-              >
-                Date de création
-                {sortConfig.key === "creationDate" ? (
-                  sortConfig.direction === "asc" ? " ▲" : " ▼"
-                ) : null}
+              <th scope="col" className="px-2 py-3">
+                <span className="sr-only">Enregistrement</span>
               </th>
-              <th
-                scope="col"
-                className="px-6 py-3 cursor-pointer"
-                onClick={() => requestSort("endDate")}
-              >
-                Date de fin
-                {sortConfig.key === "endDate" ? (
-                  sortConfig.direction === "asc" ? " ▲" : " ▼"
-                ) : null}
+              <SortableHeader label="Date" sortKey="creationDate" sortConfig={sortConfig} onSort={requestSort} />
+              <th scope="col" className="px-6 py-3">
+                Horaires
               </th>
+              <SortableHeader label="Durée" sortKey="duration" sortConfig={sortConfig} onSort={requestSort} />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {currentItems.map((course) => (
               <tr
                 key={course.id}
-                className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="bg-white transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50"
               >
                 <th
                   scope="row"
-                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  className="px-6 py-3 min-w-64 font-medium text-gray-900 dark:text-white"
                 >
                   {course.name}
                 </th>
-                <td>
+                <td className="px-2 py-3">
                   <a
-                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                    className={`${actionButton} text-white bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500`}
                     href={course.dashboardUrl}
                   >
+                    <ChartIcon />
                     Dashboard
                   </a>
                 </td>
-                <td>
+                <td className="px-2 py-3">
                   {course.replayUrl ? (
                     <a
-                      className="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
+                      className={`${actionButton} text-white bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500`}
                       href={course.replayUrl}
                     >
+                      <PlayIcon />
                       Replay
                     </a>
                   ) : (
                     <button
-                      className="text-gray-500 bg-gray-300 cursor-not-allowed focus:ring-4 focus:ring-gray-300 font-medium ml-2 rounded-lg text-sm px-5 py-2.5 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-400 focus:outline-none dark:focus:ring-gray-800"
+                      className={`${actionButton} text-gray-400 border border-dashed border-gray-300 cursor-not-allowed dark:text-gray-500 dark:border-gray-600`}
+                      title="Pas d'enregistrement pour cette session"
                       disabled
                     >
+                      <PlayIcon />
                       Replay
                     </button>
                   )}
                 </td>
-
-                <td className="px-6 py-4 font-bold">
-                  {convertUnixTimeStamp(course.creationDate)}
+                <td className="px-6 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white">
+                  {formatDay(course.creationDate)}
                 </td>
-                <td className="px-6 py-4 font-bold">
-                  {convertUnixTimeStamp(course.endDate)}
-                </td>
+                {/* Some sessions have no end date (0), which used to show as 1 January 1970. */}
+                {hasEnd(course) ? (
+                  <>
+                    <td
+                      className="px-6 py-3 whitespace-nowrap tabular-nums"
+                      title={`Du ${formatFull(course.creationDate)} au ${formatFull(course.endDate)}`}
+                    >
+                      {formatTime(course.creationDate)} – {formatTime(course.endDate)}
+                      {dayOffset(course.creationDate, course.endDate) > 0 && (
+                        <span className="ml-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                          +{dayOffset(course.creationDate, course.endDate)} j
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap tabular-nums">
+                      {formatDuration(course.creationDate, course.endDate)}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-3 whitespace-nowrap tabular-nums" title="Fin inconnue">
+                      {formatTime(course.creationDate)} – <span className="text-gray-400 dark:text-gray-500">?</span>
+                    </td>
+                    <td className="px-6 py-3 text-gray-400 dark:text-gray-500">—</td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

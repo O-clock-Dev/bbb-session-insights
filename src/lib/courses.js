@@ -100,7 +100,12 @@ async function loadCourses() {
   return cache.pending;
 }
 
-const SORT_KEYS = ["name", "creationDate", "endDate"];
+const SORT_KEYS = ["name", "creationDate", "endDate", "duration"];
+
+// Sessions without an end date (0) get -1 so that they come first, then the shortest ones.
+const durationOf = (course) =>
+  course.endDate >= course.creationDate ? course.endDate - course.creationDate : -1;
+const sortValue = (course, sort) => (sort === "duration" ? durationOf(course) : course[sort]);
 const nameCollator = new Intl.Collator("fr", { sensitivity: "base", numeric: true });
 const MAX_LIMIT = 200;
 
@@ -130,8 +135,8 @@ export async function getCoursesPage({
   if (SORT_KEYS.includes(sort)) {
     const direction = order === "desc" ? -1 : 1;
     filtered = [...filtered].sort((a, b) => {
-      const x = a.course[sort];
-      const y = b.course[sort];
+      const x = sortValue(a.course, sort);
+      const y = sortValue(b.course, sort);
       if (typeof x === "string" && typeof y === "string") {
         return direction * nameCollator.compare(x, y);
       }
