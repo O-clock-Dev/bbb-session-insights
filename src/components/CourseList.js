@@ -106,6 +106,14 @@ export default function CourseList() {
   const totalPages = data?.totalPages ?? 1;
   const startIndex = ((data?.page ?? currentPage) - 1) * ITEMS_PER_PAGE;
 
+  const hasFilters = Boolean(selectedPromotion || searchTerm);
+  const resetFilters = () => {
+    setSelectedPromotion("");
+    setSearchTerm("");
+    setDebouncedSearch("");
+    setCurrentPage(1);
+  };
+
   const tableRef = useRef(null);
 
   const handlePageChange = (page) => {
@@ -141,7 +149,8 @@ export default function CourseList() {
   return (
     <>
       <hr className="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700" />
-      <div className="flex items-center space-x-4">
+      {/* Toolbar: it must stay the first div right after the <hr>, where the Dashboard+ script adds its button. */}
+      <div className="flex w-[calc(100vw-2rem)] max-w-6xl flex-col gap-3 text-base sm:flex-row sm:items-center">
         <PromotionSelect
           selectedPromotion={selectedPromotion}
           setSelectedPromotion={(value) => {
@@ -157,8 +166,20 @@ export default function CourseList() {
             setCurrentPage(1);
           }}
         />
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center justify-center gap-1.5 h-10 px-3 shrink-0 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+          >
+            <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M18 6 6 18M6 6l12 12" />
+            </svg>
+            Réinitialiser
+          </button>
+        )}
       </div>
-      <hr className="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700" />
+      <div className="h-6" aria-hidden="true" />
       <div
         ref={tableRef}
         className={`relative w-[calc(100vw-2rem)] max-w-6xl overflow-x-auto rounded-xl border border-gray-200 shadow-sm scroll-mt-4 transition-opacity dark:border-gray-700 ${
@@ -197,7 +218,7 @@ export default function CourseList() {
                 >
                   {course.name}
                 </th>
-                <td className="px-2 py-3">
+                <td className="px-2 py-3 whitespace-nowrap">
                   <a
                     className={`${actionButton} text-white bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500`}
                     href={course.dashboardUrl}
@@ -206,7 +227,7 @@ export default function CourseList() {
                     Dashboard
                   </a>
                 </td>
-                <td className="px-2 py-3">
+                <td className="px-2 py-3 whitespace-nowrap">
                   {course.replayUrl ? (
                     <a
                       className={`${actionButton} text-white bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500`}
