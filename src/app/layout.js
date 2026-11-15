@@ -6,8 +6,8 @@ import SessionGuard from "@/components/SessionGuard";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Dashboard-listing",
-  description: "Liste des liens dashboard",
+  title: "Sessions BigBlueButton",
+  description: "Tableaux de bord d'activité des apprenants et replays des sessions BigBlueButton",
 };
 
 export default function RootLayout({ children }) {
