@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import PromotionSelect from "@/components/PromotionSelect";
 import Pagination from "@/components/Pagination";
-import { capitalizeFirstLetter, getPageNumbers } from "@/utils/stringsUtils";
+import { getPageNumbers } from "@/utils/stringsUtils";
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
 
 const ITEMS_PER_PAGE = 50;
@@ -49,7 +49,7 @@ export default function CourseList() {
     revalidateIfStale: false,
   });
 
-  const uniquePromotions = data?.promotions ?? [];
+  const promotions = data?.promotions ?? [];
   const currentItems = data?.items ?? [];
   const totalItems = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
@@ -90,8 +90,7 @@ export default function CourseList() {
             setSelectedPromotion(value);
             setCurrentPage(1);
           }}
-          uniquePromotions={uniquePromotions}
-          capitalizeFirstLetter={capitalizeFirstLetter}
+          promotions={promotions}
         />
         <SearchBar
           searchTerm={searchTerm}

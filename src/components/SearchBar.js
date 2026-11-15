@@ -2,7 +2,7 @@ import React from "react";
 
 const SearchBar = ({ searchTerm, setSearchTerm }) => {
     return (
-        <form className="max-w-xl mx-auto w-full">
+        <form className="max-w-xl mx-auto w-full" onSubmit={(e) => e.preventDefault()}>
             <label
                 htmlFor="default-search"
                 className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
@@ -36,7 +36,6 @@ const SearchBar = ({ searchTerm, setSearchTerm }) => {
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
                     }}
-                    required
                 />
             </div>
         </form>

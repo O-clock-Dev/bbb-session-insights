@@ -1,11 +1,23 @@
 import fs from "node:fs/promises";
 import { join } from "node:path";
+import { detectPromotions, normalize } from "@/lib/promotions";
 
 // Reading every learning dashboard file is slow on a real BBB server
 // (thousands of folders), so the parsed list is kept in memory for a while.
 const CACHE_TTL_MS = (Number(process.env.COURSES_CACHE_TTL) || 300) * 1000;
 
-let cache = { courses: null, promotions: null, expiresAt: 0, pending: null };
+let cache = { entries: null, promotions: null, expiresAt: 0, pending: null };
+
+const searchDateFormats = [
+  new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Paris",
+  }),
+  new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeZone: "Europe/Paris" }),
+];
 
 async function generateReplayUrl(meetingId) {
   try {
@@ -48,19 +60,18 @@ export async function parseCourses() {
   return Promise.all(files.map((file) => readCourse(folderName, file)));
 }
 
-function extractPromotions(courses) {
-  return [
-    ...new Set(
-      courses
-        .map((course) => course.name.split("-")[0].trim().toLowerCase())
-        .filter((promotion) => !promotion.includes("'s room"))
-        .filter((promotion) => !promotion.includes(" ")),
-    ),
-  ].sort();
+// Text matched by the search bar: session name and creation date
+// ("vendredi 13 novembre 2026", "13/11/2026"), without accents or case.
+function searchTextOf(course) {
+  const date = new Date(course.creationDate);
+  const dates = Number.isNaN(date.getTime())
+    ? []
+    : searchDateFormats.map((format) => format.format(date));
+  return normalize([course.name, ...dates].join(" "));
 }
 
 async function loadCourses() {
-  if (cache.courses && Date.now() < cache.expiresAt) return cache;
+  if (cache.entries && Date.now() < cache.expiresAt) return cache;
   // Concurrent requests share the same scan instead of starting their own.
   if (!cache.pending) {
     cache.pending = parseCourses()
@@ -68,9 +79,14 @@ async function loadCourses() {
         const sorted = [...courses].sort(
           (a, b) => new Date(b.creationDate) - new Date(a.creationDate),
         );
+        const { promotionOf, promotions } = detectPromotions(sorted);
         cache = {
-          courses: sorted,
-          promotions: extractPromotions(sorted),
+          entries: sorted.map((course) => ({
+            course,
+            promotion: promotionOf.get(course.id) ?? null,
+            searchText: searchTextOf(course),
+          })),
+          promotions,
           expiresAt: Date.now() + CACHE_TTL_MS,
           pending: null,
         };
@@ -85,6 +101,7 @@ async function loadCourses() {
 }
 
 const SORT_KEYS = ["name", "creationDate", "endDate"];
+const nameCollator = new Intl.Collator("fr", { sensitivity: "base", numeric: true });
 const MAX_LIMIT = 200;
 
 function toPositiveInt(value, fallback) {
@@ -100,21 +117,26 @@ export async function getCoursesPage({
   sort,
   order,
 }) {
-  const { courses, promotions } = await loadCourses();
+  const { entries, promotions } = await loadCourses();
 
-  const promotionTerm = promotion?.trim().toLowerCase();
-  const searchTerm = search?.trim().toLowerCase();
-  let filtered = courses.filter(
-    (course) =>
-      (!promotionTerm || course.name.toLowerCase().includes(promotionTerm)) &&
-      (!searchTerm || course.name.toLowerCase().includes(searchTerm)),
+  const promotionKey = promotion ? normalize(promotion).trim() : "";
+  const searchWords = normalize(search ?? "").split(/\s+/).filter(Boolean);
+  let filtered = entries.filter(
+    (entry) =>
+      (!promotionKey || entry.promotion === promotionKey) &&
+      searchWords.every((word) => entry.searchText.includes(word)),
   );
 
   if (SORT_KEYS.includes(sort)) {
     const direction = order === "desc" ? -1 : 1;
     filtered = [...filtered].sort((a, b) => {
-      if (a[sort] < b[sort]) return -direction;
-      if (a[sort] > b[sort]) return direction;
+      const x = a.course[sort];
+      const y = b.course[sort];
+      if (typeof x === "string" && typeof y === "string") {
+        return direction * nameCollator.compare(x, y);
+      }
+      if (x < y) return -direction;
+      if (x > y) return direction;
       return 0;
     });
   }
@@ -126,7 +148,9 @@ export async function getCoursesPage({
   const start = (currentPage - 1) * pageSize;
 
   return {
-    items: filtered.slice(start, start + pageSize),
+    items: filtered
+      .slice(start, start + pageSize)
+      .map(({ course, promotion }) => ({ ...course, promotion })),
     total,
     page: currentPage,
     limit: pageSize,

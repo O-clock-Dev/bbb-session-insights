@@ -1,8 +1,14 @@
 import React from "react";
 
-const PromotionSelect = ({ selectedPromotion, setSelectedPromotion, uniquePromotions, capitalizeFirstLetter }) => {
+const renderOption = (promotion) => (
+    <option key={promotion.value} value={promotion.value}>
+        {promotion.label} ({promotion.count})
+    </option>
+);
+
+const PromotionSelect = ({ selectedPromotion, setSelectedPromotion, promotions }) => {
     return (
-        <form className="max-w-sm mx-auto">
+        <form className="max-w-sm mx-auto" onSubmit={(e) => e.preventDefault()}>
             <select
                 id="promotions"
                 className="block w-100 p-4 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -11,12 +17,13 @@ const PromotionSelect = ({ selectedPromotion, setSelectedPromotion, uniquePromot
                     setSelectedPromotion(e.target.value);
                 }}
             >
-                <option value="">Promotions</option>
-                {uniquePromotions.map((promotion, index) => (
-                    <option key={index} value={promotion}>
-                        {capitalizeFirstLetter(promotion)}
-                    </option>
-                ))}
+                <option value="">Toutes les promotions</option>
+                <optgroup label="Promotions">
+                    {promotions.filter((promotion) => !promotion.isGroup).map(renderOption)}
+                </optgroup>
+                <optgroup label="Sessions hors promotion">
+                    {promotions.filter((promotion) => promotion.isGroup).map(renderOption)}
+                </optgroup>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-black">
                 <svg

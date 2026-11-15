@@ -1,7 +1,3 @@
-export const capitalizeFirstLetter = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-};
-
 export const getPageNumbers = (currentPage, totalPages) => {
     const pageNumbers = [];
     if (totalPages <= 10) {
