@@ -1,10 +1,9 @@
 "use client";
 import useSWR from "swr";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import PromotionSelect from "@/components/PromotionSelect";
 import Pagination from "@/components/Pagination";
-import { getPageNumbers } from "@/utils/stringsUtils";
 import convertUnixTimeStamp from "@/utils/convertUnixTimestamp";
 
 const ITEMS_PER_PAGE = 50;
@@ -55,8 +54,15 @@ export default function CourseList() {
   const totalPages = data?.totalPages ?? 1;
   const startIndex = ((data?.page ?? currentPage) - 1) * ITEMS_PER_PAGE;
 
+  const tableRef = useRef(null);
+
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    // The pagination sits below the table: bring the top of the new page into view.
+    if (tableRef.current?.getBoundingClientRect().top < 0) {
+      tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const requestSort = (key) => {
@@ -101,7 +107,7 @@ export default function CourseList() {
         />
       </div>
       <hr className="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700" />
-      <div className="mt-3 relative overflow-x-auto shadow-md sm:rounded-lg">
+      <div ref={tableRef} className="mt-3 relative overflow-x-auto shadow-md sm:rounded-lg scroll-mt-4">
         <table className="w-full border-collapse text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
@@ -191,10 +197,9 @@ export default function CourseList() {
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        handlePageChange={handlePageChange}
-        getPageNumbers={() => getPageNumbers(currentPage, totalPages)}
+        onPageChange={handlePageChange}
         startIndex={startIndex}
-        currentItemsLength={currentItems.length}
+        pageItemCount={currentItems.length}
         totalItems={totalItems}
       />
     </>
