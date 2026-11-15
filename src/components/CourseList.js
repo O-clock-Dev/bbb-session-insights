@@ -17,6 +17,56 @@ const fetcher = async (url) => {
   return body;
 };
 
+const SLOW_LOADING_MS = 3000;
+const SKELETON_ROWS = 8;
+const SKELETON_NAME_WIDTHS = ["w-2/3", "w-1/2", "w-3/4", "w-2/5", "w-3/5", "w-1/2", "w-2/3", "w-2/5"];
+
+const Bar = ({ className }) => (
+  <div className={`h-3 rounded-full bg-gray-200 dark:bg-gray-700 ${className}`} />
+);
+
+// Placeholder rows shown in a <tfoot> during the first load: they line up with the real columns,
+// while scripts reading the rows of the <tbody> (Dashboard+) ignore them.
+const TableSkeleton = ({ isSlow }) => (
+  <tfoot className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+    {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+      <tr key={index} className="motion-safe:animate-pulse" aria-hidden="true">
+        <td className="px-6 py-4 min-w-64">
+          <Bar className={SKELETON_NAME_WIDTHS[index % SKELETON_NAME_WIDTHS.length]} />
+        </td>
+        <td className="px-2 py-3">
+          <div className="h-8 w-24 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        </td>
+        <td className="px-2 py-3">
+          <div className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        </td>
+        <td className="px-6 py-4">
+          <Bar className="w-28" />
+        </td>
+        <td className="px-6 py-4">
+          <Bar className="w-24" />
+        </td>
+        <td className="px-6 py-4">
+          <Bar className="w-12" />
+        </td>
+      </tr>
+    ))}
+    <tr>
+      <td colSpan={6} className="px-6 py-4">
+        <p role="status" className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <span
+            className="inline-block size-4 shrink-0 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+            aria-hidden="true"
+          />
+          {isSlow
+            ? "Premier chargement : la liste des sessions est en cours de préparation, cela peut prendre quelques secondes…"
+            : "Chargement des sessions…"}
+        </p>
+      </td>
+    </tr>
+  </tfoot>
+);
+
 const hasEnd = (course) => course.endDate >= course.creationDate;
 
 const actionButton =
@@ -91,15 +141,28 @@ export default function CourseList() {
     params.set("order", sortConfig.direction);
   }
 
-  const { data, error, isLoading } = useSWR(`${API_URL}?${params}`, fetcher, {
+  const { data, error, isLoading, mutate } = useSWR(`${API_URL}?${params}`, fetcher, {
     keepPreviousData: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
   });
 
-  // With keepPreviousData, the previous page stays on screen while the next one loads.
+  // First load: nothing to show yet. Later loads: with keepPreviousData, the previous page
+  // stays on screen while the next one loads.
+  const isInitialLoading = isLoading && !data;
   const isFetching = isLoading && Boolean(data);
+
+  // The first load can take a while when the server has to scan the BBB folders.
+  const [isSlow, setIsSlow] = useState(false);
+  useEffect(() => {
+    if (!isInitialLoading) {
+      setIsSlow(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => setIsSlow(true), SLOW_LOADING_MS);
+    return () => clearTimeout(timer);
+  }, [isInitialLoading]);
   const promotions = data?.promotions ?? [];
   const currentItems = data?.items ?? [];
   const totalItems = data?.total ?? 0;
@@ -134,15 +197,29 @@ export default function CourseList() {
     setCurrentPage(1);
   };
 
-  if (error) return <div>Impossible de charger les sessions : {error.message}</div>;
-  if (isLoading && !data)
+  if (error && !data)
     return (
       <div
-        className="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500"
-        role="status"
-        aria-label="loading"
+        role="alert"
+        className="mt-10 flex w-[calc(100vw-2rem)] max-w-xl flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-6 py-5 text-center text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
       >
-        <span className="sr-only">Chargement en cours...</span>
+        <p>
+          <span className="font-semibold">Impossible de charger les sessions.</span> {error.message}
+        </p>
+        <button
+          type="button"
+          onClick={() => mutate()}
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+        >
+          {isLoading && (
+            <span
+              className="inline-block size-4 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+              aria-hidden="true"
+            />
+          )}
+          {isLoading ? "Nouvelle tentative…" : "Réessayer"}
+        </button>
       </div>
     );
 
@@ -185,8 +262,13 @@ export default function CourseList() {
         className={`relative w-[calc(100vw-2rem)] max-w-6xl overflow-x-auto rounded-xl border border-gray-200 shadow-sm scroll-mt-4 transition-opacity dark:border-gray-700 ${
           isFetching ? "opacity-60" : ""
         }`}
-        aria-busy={isFetching}
+        aria-busy={isLoading}
       >
+        {isFetching && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden" aria-hidden="true">
+            <div className="h-full w-1/4 bg-blue-500 motion-safe:animate-progress-indeterminate" />
+          </div>
+        )}
         {/* Keep the column order and the <th> holding the bare name: the Dashboard+ script
             served with the production page reads them. */}
         <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
@@ -279,16 +361,21 @@ export default function CourseList() {
               </tr>
             ))}
           </tbody>
+          {/* The table and its empty <tbody> are rendered from the start, so that scripts
+              watching the rows (Dashboard+) find them. */}
+          {isInitialLoading && <TableSkeleton isSlow={isSlow} />}
         </table>
       </div>
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-        startIndex={startIndex}
-        pageItemCount={currentItems.length}
-        totalItems={totalItems}
-      />
+      {data && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          startIndex={startIndex}
+          pageItemCount={currentItems.length}
+          totalItems={totalItems}
+        />
+      )}
     </>
   );
 }
