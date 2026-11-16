@@ -10,6 +10,16 @@ module.exports = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        // Thin bar sliding across the top of the table while a page loads.
+        "progress-indeterminate": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+      },
+      animation: {
+        "progress-indeterminate": "progress-indeterminate 1.2s ease-in-out infinite",
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":

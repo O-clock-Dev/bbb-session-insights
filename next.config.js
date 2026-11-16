@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
 const os = require("node:os");
+
 const nextConfig = {
   output: "standalone",
-};
-
-module.exports = {
-  output: "standalone",
-  basePath: "/dashboards",
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   webpack: (config, { dev, isServer, webpack, nextRuntime }) => {
     config.module.rules.push({
       test: /\.node$/,
@@ -24,3 +21,5 @@ module.exports = {
     return config;
   },
 };
+
+module.exports = nextConfig;

@@ -9,7 +9,7 @@ function isAuthorized(email) {
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
-  if (session && isAuthorized(session.user.email)) {
+  if (session && isAuthorized(session.user.email) || process.env.SKIP_KEYCLOAK === 'true') {
     return (
       <div className="flex flex-col justify-center items-center text-2xl">
         <div className="items-center justify-center border-1 flex flex-col">
@@ -18,10 +18,12 @@ export default async function Home() {
             src="https://oclock.io/wp-content/uploads/2023/11/logo-noir-blanc-rouge-768x768_centre-rond720px.png"
             alt="Logo O'clock"
           ></img>
-          <div>
-            Liste des dashboard d&apos;activités apprenant sur{" "}
-            {process.env.LEARNING_DASHBOARD_BASEURL}{" "}
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Sessions BigBlueButton
+          </h1>
+          <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
+            Tableaux de bord d&apos;activité des apprenants et replays
+          </p>
           <CourseList></CourseList>
         </div>
       </div>
