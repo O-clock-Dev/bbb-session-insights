@@ -37,7 +37,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, startIndex, pageIte
 
     return (
         <nav
-            className="flex w-full flex-col items-center gap-3 pt-4 md:flex-row md:justify-between"
+            className="flex w-full flex-col items-center gap-3 pt-4 pb-4 md:flex-row md:justify-between"
             aria-label="Pagination des sessions"
         >
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -79,9 +79,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange, startIndex, pageIte
                                     onClick={() => onPageChange(page)}
                                     aria-current={page === currentPage ? "page" : undefined}
                                     aria-label={`Page ${page}`}
-                                    className={`${baseButton} tabular-nums ${
-                                        page === currentPage ? currentButton : idleButton
-                                    }`}
+                                    className={`${baseButton} tabular-nums ${page === currentPage ? currentButton : idleButton
+                                        }`}
                                 >
                                     {page}
                                 </button>
