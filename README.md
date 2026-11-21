@@ -55,7 +55,8 @@ Open source AGPLv3 software for BigBlueButton session analysis.
     * `LEARNING_DASHBOARD_FOLDER="/folder/learning-dashboard"`: location of the BBB learning dashboard folder.
     * `LEARNING_DASHBOARD_BASEURL="https://bbb.mydomain.school"`: URL of the BBB server, used to build the public links to session data.
     * `REPLAYS_FOLDER="/folder/published/presentation"`: location of the BBB recordings folder.
-    * `COURSES_CACHE_TTL=300`: optional, how long (in seconds) the session list is kept in memory before the folders are scanned again. Defaults to `300`. New sessions can take up to this long to appear.
+    * `COURSES_CACHE_TTL=300`: optional, how long (in seconds) the session list is kept in memory before the folders are scanned again. Defaults to `300`. New sessions can take up to this long to appear. The first scan after startup reads every dashboard file; later scans run in the background while the previous list is still served, and only read the new or modified files.
+    * `COURSES_SCAN_CONCURRENCY=4`: optional, how many dashboard files are read at the same time during a scan. Defaults to `4`. Lower it to spread the load of the first scan on the BBB server.
 
 #### SSO
 
