@@ -84,19 +84,38 @@ async function listMeetingFolder(folderName, meeting) {
   };
 }
 
-// Paths of the dashboard files, relative to folderName ("<meeting>/<report>/learning_dashboard_data.json").
-async function listDashboardFiles(folderName) {
-  const entries = await fs.readdir(folderName, { withFileTypes: true });
-  const meetings = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  const listings = await mapWithConcurrency(meetings, SCAN_CONCURRENCY, (meeting) =>
-    listMeetingFolder(folderName, meeting).catch(() => null),
-  );
-  const nextFolders = new Map();
-  listings.forEach((listing, index) => {
-    if (listing) nextFolders.set(meetings[index], listing);
-  });
-  meetingFolders = nextFolders;
-  return listings.flatMap((listing) => listing?.files ?? []);
+// Meeting folders are named "<id>-<creation timestamp in ms>": the most recent ones come first.
+const meetingTime = (meeting) => Number(meeting.match(/-(\d+)$/)?.[1]) || 0;
+// On the first scan, a list is published as soon as these most recent meetings are read,
+// so the latest sessions show up while the older ones are still being read.
+const PRIORITY_MEETINGS = 200;
+
+// Lists one meeting folder and reads its dashboard files.
+async function scanMeeting(folderName, meeting) {
+  const listing = await listMeetingFolder(folderName, meeting);
+  const reports = [];
+  for (const file of listing.files) {
+    // A file BBB is still writing can be incomplete: skip it, it is read again on the next scan.
+    const report = await readReport(folderName, file).catch((error) => {
+      console.warn(`Skipping ${file}: ${error.message}`);
+      return null;
+    });
+    reports.push({ file, report });
+  }
+  return { listing, reports };
+}
+
+function toCourses(files, replays) {
+  const baseUrl = process.env.LEARNING_DASHBOARD_BASEURL;
+  return [...files.values()].map(({ meetingId, course, searchText }) => ({
+    course: {
+      ...course,
+      replayUrl: replays.has(meetingId)
+        ? `${baseUrl}/playback/presentation/2.3/${meetingId}`
+        : null,
+    },
+    searchText,
+  }));
 }
 
 const sameSet = (a, b) => a?.size === b?.size && [...a].every((value) => b.has(value));
@@ -132,7 +151,8 @@ async function readReport(folderName, file) {
 
 // Returns the sessions found in LEARNING_DASHBOARD_FOLDER, each with its search text.
 // When nothing changed since the previous scan, the previous array is returned as is.
-export async function parseCourses() {
+// onPartial, if given, receives the sessions of the most recent meetings before the rest is read.
+export async function parseCourses(onPartial) {
   if (process.env.NODE_ENV === "localdev") {
     if (!lastScan.courses) {
       lastScan.courses = require("@datas/coursesDev.json").map((course) => ({
@@ -149,53 +169,55 @@ export async function parseCourses() {
     );
   }
 
-  const [files, replays] = await Promise.all([listDashboardFiles(folderName), listReplays()]);
+  const [entries, replays] = await Promise.all([
+    fs.readdir(folderName, { withFileTypes: true }),
+    listReplays(),
+  ]);
+  const meetings = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => ({ name: entry.name, time: meetingTime(entry.name) }))
+    .sort((a, b) => b.time - a.time)
+    .map(({ name }) => name);
 
-  const reports = await mapWithConcurrency(files, SCAN_CONCURRENCY, (file) =>
-    // A file BBB is still writing can be incomplete: skip it, it is read again on the next scan.
-    readReport(folderName, file).catch((error) => {
-      console.warn(`Skipping ${file}: ${error.message}`);
-      return null;
-    }),
-  );
+  const nextFolders = new Map();
+  const nextFiles = new Map();
+  let changed = !sameSet(replays, lastScan.replays);
+  const scanMeetings = async (batch) => {
+    const results = await mapWithConcurrency(batch, SCAN_CONCURRENCY, (meeting) =>
+      scanMeeting(folderName, meeting).catch(() => null),
+    );
+    results.forEach((result, index) => {
+      if (!result) {
+        changed = true;
+        return;
+      }
+      nextFolders.set(batch[index], result.listing);
+      result.reports.forEach(({ file, report }) => {
+        if (!report) {
+          changed = true;
+          return;
+        }
+        const { changed: reportChanged, ...entry } = report;
+        if (reportChanged) changed = true;
+        nextFiles.set(file, entry);
+      });
+    });
+  };
 
-  const nextParsedFiles = new Map();
-  let changed = files.length !== parsedFiles.size || !sameSet(replays, lastScan.replays);
-  reports.forEach((report, index) => {
-    if (!report) {
-      changed = true;
-      return;
-    }
-    const { changed: reportChanged, ...entry } = report;
-    if (reportChanged) changed = true;
-    nextParsedFiles.set(files[index], entry);
-  });
-  parsedFiles = nextParsedFiles;
+  await scanMeetings(meetings.slice(0, PRIORITY_MEETINGS));
+  if (onPartial && meetings.length > PRIORITY_MEETINGS) onPartial(toCourses(nextFiles, replays));
+  await scanMeetings(meetings.slice(PRIORITY_MEETINGS));
+
+  if (nextFiles.size !== parsedFiles.size) changed = true;
+  parsedFiles = nextFiles;
+  meetingFolders = nextFolders;
 
   if (!changed && lastScan.courses) return lastScan.courses;
-
-  const baseUrl = process.env.LEARNING_DASHBOARD_BASEURL;
-  lastScan = {
-    replays,
-    courses: [...parsedFiles.values()].map(({ meetingId, course, searchText }) => ({
-      course: {
-        ...course,
-        replayUrl: replays.has(meetingId)
-          ? `${baseUrl}/playback/presentation/2.3/${meetingId}`
-          : null,
-      },
-      searchText,
-    })),
-  };
+  lastScan = { replays, courses: toCourses(parsedFiles, replays) };
   return lastScan.courses;
 }
 
-async function buildCache() {
-  const courses = await parseCourses();
-  // Same sessions as last time: keep the sorted list and the promotions.
-  if (courses === cache.courses) {
-    return { ...cache, expiresAt: Date.now() + CACHE_TTL_MS, pending: null };
-  }
+function toCache(courses, complete) {
   const sorted = [...courses].sort(
     (a, b) => new Date(b.course.creationDate) - new Date(a.course.creationDate),
   );
@@ -208,9 +230,33 @@ async function buildCache() {
     })),
     promotions,
     courses,
-    expiresAt: Date.now() + CACHE_TTL_MS,
+    complete,
+    // A partial list is already expired: requests serve it while the scan goes on.
+    expiresAt: complete ? Date.now() + CACHE_TTL_MS : 0,
     pending: null,
   };
+}
+
+// Requests waiting for the first list, released as soon as a partial one is ready.
+let firstListWaiters = [];
+const releaseFirstListWaiters = () => {
+  firstListWaiters.forEach((resolve) => resolve());
+  firstListWaiters = [];
+};
+
+async function buildCache() {
+  const onPartial = cache.entries
+    ? undefined
+    : (courses) => {
+        cache = { ...toCache(courses, false), pending: cache.pending };
+        releaseFirstListWaiters();
+      };
+  const courses = await parseCourses(onPartial);
+  // Same sessions as last time: keep the sorted list and the promotions.
+  if (courses === cache.courses && cache.complete) {
+    return { ...cache, expiresAt: Date.now() + CACHE_TTL_MS, pending: null };
+  }
+  return toCache(courses, true);
 }
 
 // Concurrent requests share the same scan instead of starting their own.
@@ -223,6 +269,7 @@ function refreshCache() {
       })
       .finally(() => {
         cache.pending = null;
+        releaseFirstListWaiters();
       });
   }
   return cache.pending;
@@ -230,13 +277,18 @@ function refreshCache() {
 
 async function loadCourses() {
   if (cache.entries && Date.now() < cache.expiresAt) return cache;
-  // Once a list exists, nobody waits for a scan: the previous list is served while
-  // the new one is built in the background.
+  // Once a list exists, nobody waits for a scan: the previous (or partial) list is served
+  // while the new one is built in the background.
   if (cache.entries) {
     refreshCache().catch((error) => console.error("Refreshing the sessions failed:", error));
     return cache;
   }
-  return refreshCache();
+  // First scan: answer with the most recent sessions as soon as they are read.
+  await Promise.race([
+    refreshCache(),
+    new Promise((resolve) => firstListWaiters.push(resolve)),
+  ]);
+  return cache;
 }
 
 const SORT_KEYS = ["name", "creationDate", "endDate", "duration"];
@@ -261,7 +313,7 @@ export async function getCoursesPage({
   sort,
   order,
 }) {
-  const { entries, promotions } = await loadCourses();
+  const { entries, promotions, complete } = await loadCourses();
 
   const promotionKey = promotion ? normalize(promotion).trim() : "";
   const searchWords = normalize(search ?? "").split(/\s+/).filter(Boolean);
@@ -300,5 +352,7 @@ export async function getCoursesPage({
     limit: pageSize,
     totalPages,
     promotions,
+    // false while the first scan is still reading the older sessions.
+    complete: complete !== false,
   };
 }

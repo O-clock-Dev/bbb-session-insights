@@ -18,6 +18,7 @@ const fetcher = async (url) => {
 };
 
 const SLOW_LOADING_MS = 3000;
+const PARTIAL_REFRESH_MS = 2000;
 const SKELETON_ROWS = 8;
 const SKELETON_NAME_WIDTHS = ["w-2/3", "w-1/2", "w-3/4", "w-2/5", "w-3/5", "w-1/2", "w-2/3", "w-2/5"];
 
@@ -146,6 +147,8 @@ export default function CourseList() {
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: false,
+    // While the server is still reading the older sessions, ask again until the list is complete.
+    refreshInterval: (latest) => (latest?.complete === false ? PARTIAL_REFRESH_MS : 0),
   });
 
   // First load: nothing to show yet. Later loads: with keepPreviousData, the previous page
@@ -163,6 +166,7 @@ export default function CourseList() {
     const timer = setTimeout(() => setIsSlow(true), SLOW_LOADING_MS);
     return () => clearTimeout(timer);
   }, [isInitialLoading]);
+  const isPartial = data?.complete === false;
   const promotions = data?.promotions ?? [];
   const currentItems = data?.items ?? [];
   const totalItems = data?.total ?? 0;
@@ -256,7 +260,17 @@ export default function CourseList() {
           </button>
         )}
       </div>
-      <div className="h-6" aria-hidden="true" />
+      <div className="flex h-6 w-[calc(100vw-2rem)] max-w-6xl items-center" aria-live="polite">
+        {isPartial && (
+          <p className="inline-flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span
+              className="inline-block size-3 shrink-0 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+              aria-hidden="true"
+            />
+            Sessions les plus récentes affichées, chargement des plus anciennes…
+          </p>
+        )}
+      </div>
       <div
         ref={tableRef}
         className={`relative w-[calc(100vw-2rem)] max-w-6xl overflow-x-auto rounded-xl border border-gray-200 shadow-sm scroll-mt-4 transition-opacity dark:border-gray-700 ${
